@@ -1,0 +1,145 @@
+{
+  "about": "Pinned official tool archives (SHA-256). Installed into .tools/ by tools/bootstrap.py.",
+  "platforms": {
+    "linux-x86_64": {
+      "luau": {
+        "version": "0.713",
+        "url": "https://github.com/luau-lang/luau/releases/download/0.713/luau-ubuntu.zip",
+        "sha256": "0419d9a30a2617b79d0b1872819c7cc055a8c710e62e233eedaefb53bcb49f3f",
+        "programs": [
+          "luau",
+          "luau-analyze"
+        ]
+      },
+      "lune": {
+        "version": "0.10.5",
+        "url": "https://github.com/lune-org/lune/releases/download/v0.10.5/lune-0.10.5-linux-x86_64.zip",
+        "sha256": "1fb5dee6a1afa1d300092805c6e660fe06144d29dd68c45cf6956f040667f791",
+        "programs": [
+          "lune"
+        ]
+      },
+      "rojo": {
+        "version": "7.7.0",
+        "url": "https://github.com/rojo-rbx/rojo/releases/download/v7.7.0/rojo-7.7.0-linux-x86_64.zip",
+        "sha256": "22503e5839864f9d7c2171c48b536fc229f2cc4d8774c9cc149f60941d864073",
+        "programs": [
+          "rojo"
+        ]
+      },
+      "stylua": {
+        "version": "2.5.2",
+        "url": "https://github.com/JohnnyMorganz/StyLua/releases/download/v2.5.2/stylua-linux-x86_64.zip",
+        "sha256": "bcb0d855e91f102f28a370e850f8566b3b44b79e6274d806ea5246837c0fd5ab",
+        "programs": [
+          "stylua"
+        ]
+      }
+    },
+    "macos-aarch64": {
+      "luau": {
+        "version": "0.713",
+        "url": "https://github.com/luau-lang/luau/releases/download/0.713/luau-macos.zip",
+        "sha256": "8801ef57ecaaeb62d119216a9bd6811b8ad7c46f290d44d39b212a8b33fceb46",
+        "programs": [
+          "luau",
+          "luau-analyze"
+        ]
+      },
+      "lune": {
+        "version": "0.10.5",
+        "url": "https://github.com/lune-org/lune/releases/download/v0.10.5/lune-0.10.5-macos-aarch64.zip",
+        "sha256": "bdb94f47bc1d3af3e3fe796cfce9c7f406042d4aada9cc41a1c53836f3e3b411",
+        "programs": [
+          "lune"
+        ]
+      },
+      "rojo": {
+        "version": "7.7.0",
+        "url": "https://github.com/rojo-rbx/rojo/releases/download/v7.7.0/rojo-7.7.0-macos-aarch64.zip",
+        "sha256": "000f663eb406ec4670e1b675069a5e9fdb6e131505ff60f6a8e28bc8a97488cd",
+        "programs": [
+          "rojo"
+        ]
+      },
+      "stylua": {
+        "version": "2.5.2",
+        "url": "https://github.com/JohnnyMorganz/StyLua/releases/download/v2.5.2/stylua-macos-aarch64.zip",
+        "sha256": "92ff0889e16324801bc072692974bb67f8161e62010fc90f96c62a17f81f32c7",
+        "programs": [
+          "stylua"
+        ]
+      }
+    },
+    "macos-x86_64": {
+      "luau": {
+        "version": "0.713",
+        "url": "https://github.com/luau-lang/luau/releases/download/0.713/luau-macos.zip",
+        "sha256": "8801ef57ecaaeb62d119216a9bd6811b8ad7c46f290d44d39b212a8b33fceb46",
+        "programs": [
+          "luau",
+          "luau-analyze"
+        ]
+      },
+      "lune": {
+        "version": "0.10.5",
+        "url": "https://github.com/lune-org/lune/releases/download/v0.10.5/lune-0.10.5-macos-x86_64.zip",
+        "sha256": "f4b43cfd495994b7ef783ac2bb0aa24f1f940f3804b28018121bb3cc2171c1a7",
+        "programs": [
+          "lune"
+        ]
+      },
+      "rojo": {
+        "version": "7.7.0",
+        "url": "https://github.com/rojo-rbx/rojo/releases/download/v7.7.0/rojo-7.7.0-macos-x86_64.zip",
+        "sha256": "9bd69697ca3a0abf0ec847c779013e7315501b2d997d63d5e1766e14d49d9c66",
+        "programs": [
+          "rojo"
+        ]
+      },
+      "stylua": {
+        "version": "2.5.2",
+        "url": "https://github.com/JohnnyMorganz/StyLua/releases/download/v2.5.2/stylua-macos-x86_64.zip",
+        "sha256": "53c50a1605d0a6345d160a1a5a21db40bcf2bf9cd23c17f7c277a63a1bff3a7f",
+        "programs": [
+          "stylua"
+        ]
+      }
+    },
+    "windows-x86_64": {
+      "luau": {
+        "version": "0.713",
+        "url": "https://github.com/luau-lang/luau/releases/download/0.713/luau-windows.zip",
+        "sha256": "9b979681c1c98852d2bf5526e6dc78632c3730a508c2dacaae69bd1778661cab",
+        "programs": [
+          "luau.exe",
+          "luau-analyze.exe"
+        ]
+      },
+      "lune": {
+        "version": "0.10.5",
+        "url": "https://github.com/lune-org/lune/releases/download/v0.10.5/lune-0.10.5-windows-x86_64.zip",
+        "sha256": "ad0305f5cc6d7ff20996644b40bf7de0de613812f431ca241456e16f9fc89cda",
+        "programs": [
+          "lune.exe"
+        ]
+      },
+      "rojo": {
+        "version": "7.7.0",
+        "url": "https://github.com/rojo-rbx/rojo/releases/download/v7.7.0/rojo-7.7.0-windows-x86_64.zip",
+        "sha256": "2179c44862a10ecbd725bdfeb4abc64e16dc4aad9b6c8f3e1a7c46a87280b949",
+        "programs": [
+          "rojo.exe"
+        ]
+      },
+      "stylua": {
+        "version": "2.5.2",
+        "url": "https://github.com/JohnnyMorganz/StyLua/releases/download/v2.5.2/stylua-windows-x86_64.zip",
+        "sha256": "e77d0ea1226b8b389b43f702240091249a96eea25857281f90ea24d0eb9eb969",
+        "programs": [
+          "stylua.exe"
+        ]
+      }
+    }
+  }
+}
