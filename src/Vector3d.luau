@@ -168,11 +168,7 @@ function Vector3d.IsFinite(self: Vector3d): boolean
 end
 
 function Vector3d.RoundFrac(self: Vector3d, nDecimals: number): Vector3d
-	return new(
-		MathUtil.Round(self.x, nDecimals),
-		MathUtil.Round(self.y, nDecimals),
-		MathUtil.Round(self.z, nDecimals)
-	)
+	return new(MathUtil.Round(self.x, nDecimals), MathUtil.Round(self.y, nDecimals), MathUtil.Round(self.z, nDecimals))
 end
 
 function Vector3d.Dot(self: Vector3d, v2: Vector3d): number

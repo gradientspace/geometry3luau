@@ -40,8 +40,14 @@ return function(DMesh3)
 
 	function DMesh3:MeshInfoString(): string
 		local b = {}
-		table.insert(b, string.format("Vertices  count %d max %d %s", self:VertexCount(), self:MaxVertexID(), self.vertices_refcount:UsageStats()))
-		table.insert(b, string.format("Triangles count %d max %d %s", self:TriangleCount(), self:MaxTriangleID(), self.triangles_refcount:UsageStats()))
+		table.insert(
+			b,
+			string.format("Vertices  count %d max %d %s", self:VertexCount(), self:MaxVertexID(), self.vertices_refcount:UsageStats())
+		)
+		table.insert(
+			b,
+			string.format("Triangles count %d max %d %s", self:TriangleCount(), self:MaxTriangleID(), self.triangles_refcount:UsageStats())
+		)
 		table.insert(b, string.format("Edges     count %d max %d %s", self:EdgeCount(), self:MaxEdgeID(), self.edges_refcount:UsageStats()))
 		table.insert(
 			b,

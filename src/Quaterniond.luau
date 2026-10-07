@@ -303,12 +303,7 @@ function Quaterniond.Slerp(p: Quaterniond, q: Quaterniond, t: number): Quaternio
 		local tAngle = t * angle
 		local coeff0 = math.sin(angle - tAngle) * invSn
 		local coeff1 = math.sin(tAngle) * invSn
-		return new(
-			coeff0 * p.x + coeff1 * q.x,
-			coeff0 * p.y + coeff1 * q.y,
-			coeff0 * p.z + coeff1 * q.z,
-			coeff0 * p.w + coeff1 * q.w
-		)
+		return new(coeff0 * p.x + coeff1 * q.x, coeff0 * p.y + coeff1 * q.y, coeff0 * p.z + coeff1 * q.z, coeff0 * p.w + coeff1 * q.w)
 	end
 	return new(p.x, p.y, p.z, p.w)
 end

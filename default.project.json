@@ -1,0 +1,14 @@
+{
+  "name": "geometry3luau",
+  "tree": {
+    "$path": "src",
+    "Tests": {
+      "$className": "Folder",
+      "$path": "tests"
+    },
+    "Examples": {
+      "$className": "Folder",
+      "$path": "examples"
+    }
+  }
+}

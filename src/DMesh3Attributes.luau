@@ -115,7 +115,12 @@ end
 function DMesh3Attributes:EnableVertexColor(initialColor)
 	if self.vertexColor == nil then
 		self.vertexColor = self:register_attribute(
-			GeoAttributes.VertexColorsGeoAttribute.new(AttributeNames.VertexColor, self.parentMesh, EAttribType.Vertex, initialColor or Vector3d.Zero)
+			GeoAttributes.VertexColorsGeoAttribute.new(
+				AttributeNames.VertexColor,
+				self.parentMesh,
+				EAttribType.Vertex,
+				initialColor or Vector3d.Zero
+			)
 		)
 	end
 end
@@ -135,7 +140,8 @@ function DMesh3Attributes:HasMaterialID(): boolean
 end
 function DMesh3Attributes:EnableMaterialID()
 	if self.materialID == nil then
-		self.materialID = self:register_attribute(GeoAttributes.IntGeoAttribute.new(AttributeNames.MaterialID, self.parentMesh, EAttribType.Triangle))
+		self.materialID =
+			self:register_attribute(GeoAttributes.IntGeoAttribute.new(AttributeNames.MaterialID, self.parentMesh, EAttribType.Triangle))
 	end
 end
 function DMesh3Attributes:DisableMaterialID()
@@ -154,7 +160,9 @@ function DMesh3Attributes:HasTriNormals(): boolean
 end
 function DMesh3Attributes:EnableTriNormals()
 	if self.triNormals == nil then
-		self.triNormals = self:register_attribute(GeoAttributes.TriNormalsGeoAttribute.new(AttributeNames.TriNormals, self.parentMesh, EAttribType.Triangle))
+		self.triNormals = self:register_attribute(
+			GeoAttributes.TriNormalsGeoAttribute.new(AttributeNames.TriNormals, self.parentMesh, EAttribType.Triangle)
+		)
 	end
 end
 function DMesh3Attributes:DisableTriNormals()
@@ -178,7 +186,9 @@ function DMesh3Attributes:EnableTriUVs(NumChannels: number?)
 	local numChannels = NumChannels or 1
 	if self.triangleUVs == nil then
 		self.triangleUVs = AttribList.new(function(idx: number)
-			return self:register_attribute(GeoAttributes.TriUVsGeoAttribute.new(AttributeNames.TriUV(idx), self.parentMesh, EAttribType.Triangle))
+			return self:register_attribute(
+				GeoAttributes.TriUVsGeoAttribute.new(AttributeNames.TriUV(idx), self.parentMesh, EAttribType.Triangle)
+			)
 		end, function(attrib)
 			self:unregister_attribute(attrib)
 		end)

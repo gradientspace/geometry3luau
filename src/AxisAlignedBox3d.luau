@@ -75,7 +75,12 @@ function AxisAlignedBox3d.FromMinMax(vMin: Vector3d.Vector3d, vMax: Vector3d.Vec
 	)
 end
 
-function AxisAlignedBox3d.FromCenterHalfSizes(vCenter: Vector3d.Vector3d, fHalfWidth: number, fHalfHeight: number, fHalfDepth: number): AxisAlignedBox3d
+function AxisAlignedBox3d.FromCenterHalfSizes(
+	vCenter: Vector3d.Vector3d,
+	fHalfWidth: number,
+	fHalfHeight: number,
+	fHalfDepth: number
+): AxisAlignedBox3d
 	return make(
 		V3(vCenter.x - fHalfWidth, vCenter.y - fHalfHeight, vCenter.z - fHalfDepth),
 		V3(vCenter.x + fHalfWidth, vCenter.y + fHalfHeight, vCenter.z + fHalfDepth)
@@ -232,7 +237,7 @@ end
 -- Contain(Vector3d v) or Contain(AxisAlignedBox3d box)
 function AxisAlignedBox3d.Contain(self: AxisAlignedBox3d, v: any)
 	local Min, Max = self.Min, self.Max
-	if v.Min ~= nil then
+	if type(v.Min) == "table" then
 		local bmin, bmax = v.Min, v.Max
 		self.Min = V3(min(Min.x, bmin.x), min(Min.y, bmin.y), min(Min.z, bmin.z))
 		self.Max = V3(max(Max.x, bmax.x), max(Max.y, bmax.y), max(Max.z, bmax.z))
@@ -271,7 +276,7 @@ end
 
 -- Contains(Vector3d v) or Contains(AxisAlignedBox3d box2)
 function AxisAlignedBox3d.Contains(self: AxisAlignedBox3d, v: any): boolean
-	if v.Min ~= nil then
+	if type(v.Min) == "table" then
 		return self:Contains(v.Min) and self:Contains(v.Max)
 	end
 	local Min, Max = self.Min, self.Max
@@ -293,7 +298,7 @@ end
 -- DistanceSquared(Vector3d v) or DistanceSquared(AxisAlignedBox3d box2)
 function AxisAlignedBox3d.DistanceSquared(self: AxisAlignedBox3d, v: any): number
 	local Min, Max = self.Min, self.Max
-	if v.Min ~= nil then
+	if type(v.Min) == "table" then
 		-- compute lensqr( max(0, abs(center1-center2) - (extent1+extent2)) )
 		local box2 = v
 		local delta_x = abs((box2.Min.x + box2.Max.x) - (Min.x + Max.x)) - ((Max.x - Min.x) + (box2.Max.x - box2.Min.x))

@@ -1248,7 +1248,11 @@ function DMesh3:AppendTriangle(a: any, b: number?, c: number?, gid: number?): nu
 	local e1 = self:find_edge(v1, v2)
 	local e2 = self:find_edge(v2, v0)
 	local ed = self.edges.data
-	if (e0 ~= InvalidID and ed[4 * e0 + 4] ~= InvalidID) or (e1 ~= InvalidID and ed[4 * e1 + 4] ~= InvalidID) or (e2 ~= InvalidID and ed[4 * e2 + 4] ~= InvalidID) then
+	if
+		(e0 ~= InvalidID and ed[4 * e0 + 4] ~= InvalidID)
+		or (e1 ~= InvalidID and ed[4 * e1 + 4] ~= InvalidID)
+		or (e2 ~= InvalidID and ed[4 * e2 + 4] ~= InvalidID)
+	then
 		return NonManifoldID
 	end
 
@@ -1300,7 +1304,11 @@ function DMesh3:InsertTriangle(tid: number, tv: { number }, gid: number?, bUnsaf
 	local e0 = self:find_edge(v0, v1)
 	local e1 = self:find_edge(v1, v2)
 	local e2 = self:find_edge(v2, v0)
-	if (e0 ~= InvalidID and not self:IsBoundaryEdge(e0)) or (e1 ~= InvalidID and not self:IsBoundaryEdge(e1)) or (e2 ~= InvalidID and not self:IsBoundaryEdge(e2)) then
+	if
+		(e0 ~= InvalidID and not self:IsBoundaryEdge(e0))
+		or (e1 ~= InvalidID and not self:IsBoundaryEdge(e1))
+		or (e2 ~= InvalidID and not self:IsBoundaryEdge(e2))
+	then
 		return MeshResult.Failed_WouldCreateNonmanifoldEdge
 	end
 

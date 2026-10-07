@@ -12,7 +12,10 @@ TestHarness.__index = TestHarness
 
 function TestHarness.new(options)
 	options = options or {}
-	return setmetatable({ native = options.native == true, suite = options.suite or "?", list = {}, verbose = options.verbose }, TestHarness)
+	return setmetatable(
+		{ native = options.native == true, suite = options.suite or "?", list = {}, verbose = options.verbose },
+		TestHarness
+	)
 end
 
 function TestHarness:test(name: string, fn: () -> ())

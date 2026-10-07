@@ -656,7 +656,9 @@ return function(DMesh3)
 				local edc_t0 = ed[edc_i + 3]
 				local edc_t1 = ed[edc_i + 4]
 
-				if (self:tri_has_v(edc_t0, a) and self:tri_has_v(edc_t1, b)) or (self:tri_has_v(edc_t0, b) and self:tri_has_v(edc_t1, a)) then
+				if
+					(self:tri_has_v(edc_t0, a) and self:tri_has_v(edc_t1, b)) or (self:tri_has_v(edc_t0, b) and self:tri_has_v(edc_t1, a))
+				then
 					return MeshResult.Failed_CollapseTetrahedron, collapse
 				end
 			end

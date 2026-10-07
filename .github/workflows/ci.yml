@@ -1,0 +1,25 @@
+name: geometry3luau
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Headless tests, packages and package verification
+        run: python3 tools/validate.py
+        env:
+          PYTHONUNBUFFERED: '1'
+      - name: Upload prebuilt packages
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: geometry3luau-packages
+          path: |
+            dist/
+            .validation/headless.json

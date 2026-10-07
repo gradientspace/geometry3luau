@@ -17,7 +17,10 @@ RefCountVector.ClassName = "RefCountVector"
 RefCountVector.invalid = -1
 local invalid = -1
 
-export type RefCountVector = typeof(setmetatable({} :: { ref_counts: DVector.DVector, free_indices: DVector.DVector, used_count: number }, RefCountVector))
+export type RefCountVector = typeof(setmetatable(
+	{} :: { ref_counts: DVector.DVector, free_indices: DVector.DVector, used_count: number },
+	RefCountVector
+))
 
 function RefCountVector.new(): RefCountVector
 	return setmetatable({

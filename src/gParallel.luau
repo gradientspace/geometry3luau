@@ -41,7 +41,13 @@ function gParallel.Evaluate(...: () -> ())
 end
 
 -- Process indices [iStart, iEnd] in blocks: blockF(blockStart, blockEnd) (inclusive)
-function gParallel.BlockStartEnd(iStart: number, iEnd: number, blockF: (number, number) -> (), iBlockSize: number?, bDisableParallel: boolean?)
+function gParallel.BlockStartEnd(
+	iStart: number,
+	iEnd: number,
+	blockF: (number, number) -> (),
+	iBlockSize: number?,
+	bDisableParallel: boolean?
+)
 	local blockSize = iBlockSize or -1
 	if blockSize == -1 then
 		blockSize = 100 -- seems to work

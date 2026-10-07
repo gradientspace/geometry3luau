@@ -50,7 +50,7 @@ function ProgressCancel.Yielding(seconds: number?, shouldCancel: (() -> boolean)
 	return ProgressCancel.new(function()
 		local now = os.clock()
 		if now - last > interval then
-			local t = (task :: any)
+			local t = task :: any
 			if t and t.wait then
 				t.wait()
 			end

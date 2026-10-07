@@ -100,6 +100,19 @@ local game = setmetatable({
 	end,
 }, { __index = native })
 
+local INJECT = "local script, require, game, workspace, task, Instance, Content, Vector2, Vector3, Color3, CFrame, Enum = ...; "
+local function inject(source: string): string
+	local pos = 1
+	while string.sub(source, pos, pos + 2) == "--!" do
+		local nl = string.find(source, "\n", pos, true)
+		if nl == nil then
+			break
+		end
+		pos = nl + 1
+	end
+	return string.sub(source, 1, pos - 1) .. INJECT .. string.sub(source, pos)
+end
+
 local cache = {}
 local loading = {}
 local function load(instance)
@@ -113,21 +126,24 @@ local function load(instance)
 		error("Requested module was required recursively: " .. target.path)
 	end
 	loading[target] = true
-	local environment = {
-		script = wrap(target),
-		require = load,
-		game = game,
-		workspace = nativeObject,
-		task = task,
-		Instance = nativeObject,
-		Content = nativeObject,
-		Vector2 = roblox.Vector2,
-		Vector3 = roblox.Vector3,
-		Color3 = roblox.Color3,
-		CFrame = roblox.CFrame,
-		Enum = roblox.Enum,
-	}
-	local value = luau.load(target.source, { environment = environment, debugName = target.path })()
+	-- Engine globals are injected as chunk arguments rather than through a custom `environment`: a custom
+	-- environment disables Luau's builtin fast paths and native code generation, which makes headless
+	-- timings ~10x slower than Roblox. The injected `local ... = ...;` is placed at the start of the first
+	-- non-directive line, so line numbers in error messages are unchanged and --!native still applies.
+	local value = luau.load(inject(target.source), { debugName = target.path, codegenEnabled = true })(
+		wrap(target),
+		load,
+		game,
+		nativeObject,
+		task,
+		nativeObject,
+		nativeObject,
+		roblox.Vector2,
+		roblox.Vector3,
+		roblox.Color3,
+		roblox.CFrame,
+		roblox.Enum
+	)
 	loading[target] = nil
 	cache[target] = value
 	return value
@@ -194,7 +210,16 @@ for _, name in names do
 	result.passed += summary.passed
 	result.failed += summary.failed
 	result.skipped += summary.skipped
-	print(string.format("%-32s %4d passed %3d failed %3d skipped %7.2fs", name, summary.passed, summary.failed, summary.skipped, summary.seconds))
+	print(
+		string.format(
+			"%-32s %4d passed %3d failed %3d skipped %7.2fs",
+			name,
+			summary.passed,
+			summary.failed,
+			summary.skipped,
+			summary.seconds
+		)
+	)
 	for _, failure in summary.failures do
 		print("    FAIL " .. failure.name .. ": " .. string.sub(failure.error, 1, 2000))
 	end

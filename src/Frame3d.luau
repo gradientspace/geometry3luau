@@ -254,7 +254,12 @@ end
 -- Compute intersection of ray with plane passing through frame origin, normal
 -- to the specified axis. If the ray is parallel to the plane, no intersection can be found, and
 -- we return Vector3d.Invalid
-function Frame3d.RayPlaneIntersection(self: Frame3d, ray_origin: Vector3d.Vector3d, ray_direction: Vector3d.Vector3d, nAxisAsNormal: number): Vector3d.Vector3d
+function Frame3d.RayPlaneIntersection(
+	self: Frame3d,
+	ray_origin: Vector3d.Vector3d,
+	ray_direction: Vector3d.Vector3d,
+	nAxisAsNormal: number
+): Vector3d.Vector3d
 	local N = self:GetAxis(nAxisAsNormal)
 	local d = -self.Origin:Dot(N)
 	local div = ray_direction:Dot(N)

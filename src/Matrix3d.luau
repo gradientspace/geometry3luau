@@ -210,7 +210,9 @@ function Matrix3d.ToQuaternion(self: Matrix3d)
 end
 
 function Matrix3d.EpsilonEqual(self: Matrix3d, m2: Matrix3d, epsilon: number): boolean
-	return self.Row0:EpsilonEqual(m2.Row0, epsilon) and self.Row1:EpsilonEqual(m2.Row1, epsilon) and self.Row2:EpsilonEqual(m2.Row2, epsilon)
+	return self.Row0:EpsilonEqual(m2.Row0, epsilon)
+		and self.Row1:EpsilonEqual(m2.Row1, epsilon)
+		and self.Row2:EpsilonEqual(m2.Row2, epsilon)
 end
 
 function Matrix3d.RotateX(Angle: number, bIsDegrees: boolean): Matrix3d

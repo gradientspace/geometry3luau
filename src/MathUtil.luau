@@ -471,6 +471,14 @@ function MathUtil.ModuloIteration(nMaxExclusive: number, nPrime: number?): () ->
 			return nil
 		end
 		local cur = i
+		if nMaxExclusive <= 0 then
+			-- C# yields 0 and then throws DivideByZeroException; without this check Luau would yield NaN forever
+			if cur ~= 0 then
+				error("MathUtil.ModuloIteration: nMaxExclusive must be positive (division by zero)")
+			end
+			i = -1
+			return cur
+		end
 		i = (i + prime) % nMaxExclusive
 		done = (i == 0)
 		return cur
