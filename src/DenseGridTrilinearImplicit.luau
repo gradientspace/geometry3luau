@@ -8,11 +8,11 @@
 -- Implements BoundedImplicitFunction3d (Value(pt), Bounds()) plus the ValueXYZ(x, y, z) fast path.
 --
 -- Luau port notes:
---   * Constructors: DenseGridTrilinearImplicit.new(grid: DenseGrid3f, gridOrigin: Vector3d, cellSize)
+--   * Constructors: DenseGridTrilinearImplicit.new(grid: DenseGrid3d, gridOrigin: Vector3d, cellSize)
 --                   DenseGridTrilinearImplicit.FromSDFGrid(sdf_grid)   (C# ctor taking a MeshSignedDistanceGrid;
 --                   also works with any object exposing Grid(), GridOrigin() and CellSize, e.g. MeshWindingNumberGrid)
 --   * Gradient(pt) -> Vector3d
---   * The grid Buffer is read directly (see DenseGrid3f for the layout). (int) casts truncate toward zero,
+--   * The grid Buffer is read directly (see DenseGrid3d for the layout). (int) casts truncate toward zero,
 --     so points slightly below the grid origin (within one cell) are extrapolated exactly as in C#.
 
 local Vector3d = require(script.Parent.Vector3d)

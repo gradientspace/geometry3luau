@@ -1,5 +1,5 @@
 --!native
--- Port of geometry3Sharp math/Vector3d.cs (also used for Vector3f, see PORTING.md)
+-- Port of geometry3Sharp math/Vector3d.cs (Vector3d; Vector3f is not ported, see PORTING.md)
 -- Copyright (c) Ryan Schmidt (rms@gradientspace.com) - All Rights Reserved
 -- Distributed under the Boost Software License, Version 1.0. http://www.boost.org/LICENSE_1_0.txt
 --
@@ -375,13 +375,11 @@ function Vector3d.MakePerpVectors(n: Vector3d): (Vector3d, Vector3d)
 end
 
 -- support x,y,z and x y z
+-- C# bool TryParse(string s, out Vector3d result) -> returns ok, result
 function Vector3d.TryParse(s: string): (boolean, Vector3d)
-	local vals = {}
-	for token in string.gmatch(s, "[^%s,]+") do
-		table.insert(vals, tonumber(token))
-	end
-	if #vals == 3 and vals[1] and vals[2] and vals[3] then
-		return true, new(vals[1], vals[2], vals[3])
+	local ok, result4 = MathUtil.TryParseRealVector(s, 3)
+	if ok then
+		return true, new(result4.x, result4.y, result4.z)
 	end
 	return false, Vector3d.Zero
 end

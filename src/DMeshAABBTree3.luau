@@ -1316,7 +1316,7 @@ end
 local function append_leaf_box(self, ctx, iStart: number, iCount: number, tris)
 	local mtris, mverts = ctx.mtris, ctx.mverts
 	local triangles = ctx.triangles
-	-- box = AxisAlignedBox3f.Empty
+	-- box = AxisAlignedBox3d.Empty
 	local minx, miny, minz = MaxFloat, MaxFloat, MaxFloat
 	local maxx, maxy, maxz = -MaxFloat, -MaxFloat, -MaxFloat
 

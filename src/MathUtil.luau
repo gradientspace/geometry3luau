@@ -485,4 +485,28 @@ function MathUtil.ModuloIteration(nMaxExclusive: number, nPrime: number?): () ->
 	end
 end
 
+-- support x,y,z,w and x y z w alternatives
+-- C# bool TryParseRealVector(string s, int NumElements, out Vector4d result) -> returns ok, result (Vector4d)
+function MathUtil.TryParseRealVector(s: string, NumElements: number): (boolean, any)
+	-- TODO: what about european formatting that uses , as . ?
+	local Vector4d = require(script.Parent.Vector4d)
+	local result = { 0, 0, 0, 0 }
+	local tokens = {}
+	for token in string.gmatch(s, "[^, ]+") do
+		table.insert(tokens, token)
+	end
+
+	local NumFound = 0
+	if #tokens == NumElements then
+		for i = 1, NumElements do
+			local v = tonumber(tokens[i])
+			if v ~= nil then
+				result[i] = v
+				NumFound += 1
+			end
+		end
+	end
+	return (NumFound == NumElements), Vector4d.new(result[1], result[2], result[3], result[4])
+end
+
 return MathUtil

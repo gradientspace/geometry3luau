@@ -36,10 +36,15 @@ carried across. This document lists the systematic translations. Follow them for
 
 ## Numbers
 
-- Luau numbers are doubles. `float` and `double` both map to number; there are no separate float
-  types: `Vector3f` is an alias of `Vector3d`, `Vector2f` of `Vector2d`, `AxisAlignedBox3f` of
-  `AxisAlignedBox3d`, `Frame3f` of `Frame3d`. (Results may differ from C# in the last bits where
-  C# deliberately used float.)
+- Luau numbers are doubles. `float` and `double` both map to number, so only the double version of a
+  C# float/double type pair is ported, under its C# name: `Vector3d`, `Vector2d`, `AxisAlignedBox3d`,
+  `Frame3d`, `Quaterniond`, `Matrix4d`, ... The float types (`Vector3f`, `Frame3f`, `AxisAlignedBox2f`,
+  `VectorArray3f`, ...) are not ported and have no aliases: C# code using them uses the `d` type.
+  (Results may differ from C# in the last bits where C# deliberately used float.)
+- Geometric types always carry the `d` (or `i`) suffix, which also keeps them distinct from the Roblox
+  `Vector2` / `Vector3` types. Where C# only has a float type next to an integer one, the float type is
+  renamed with `d`: `DenseGrid2f` / `DenseGrid3f` → `DenseGrid2d` / `DenseGrid3d` (next to `DenseGrid3i`),
+  `Vector3fGeoAttribute` → `Vector3dGeoAttribute`.
 - Integer division: C# `a / b` on ints → `a // b` **only when both are non-negative**; C# truncates
   toward zero, Luau `//` floors. For possibly-negative values use `MathUtil.IntDiv(a, b)` (truncating).
   Same for `%`: C# remainder has the sign of the dividend; Luau `%` has the sign of the divisor.

@@ -1,4 +1,4 @@
--- Tests for MarchingCubes, Implicit3d primitives/operators, DenseGrid3f/3i, Bitmap3, AxisAlignedBox3i, GridIndexing.
+-- Tests for MarchingCubes, Implicit3d primitives/operators, DenseGrid3d/3i, Bitmap3, AxisAlignedBox3i, GridIndexing.
 
 return function(G3, h)
 	local Vector3d = G3.Vector3d
@@ -66,8 +66,8 @@ return function(G3, h)
 		h.eq(b:ClampExclusive(Vector3i.new(9, -1, 3)), Vector3i.new(3, 0, 3))
 	end)
 
-	h:test("DenseGrid3f / DenseGrid3i / Bitmap3 basics", function()
-		local g = G3.DenseGrid3f.new(3, 4, 5, 1.5)
+	h:test("DenseGrid3d / DenseGrid3i / Bitmap3 basics", function()
+		local g = G3.DenseGrid3d.new(3, 4, 5, 1.5)
 		h.eq(g:size(), 60)
 		h.eq(#g.Buffer, 60)
 		g:Set(1, 2, 3, 7)
@@ -89,7 +89,7 @@ return function(G3, h)
 		h.eq(n, 1 * 2 * 3)
 		local slice = g:get_slice(3, 2)
 		h.eq(slice:Get(1, 2), 7)
-		local c = G3.DenseGrid3f.FromCopy(g)
+		local c = G3.DenseGrid3d.FromCopy(g)
 		c:Set(0, 0, 0, -1)
 		h.eq(g:Get(0, 0, 0), 1.5, "copy is independent")
 		g:apply(function(v)
@@ -235,7 +235,7 @@ return function(G3, h)
 		local cs = 0.1
 		local origin = Vector3d.new(-1.5, -1.5, -1.5)
 		local n = 31
-		local grid = G3.DenseGrid3f.new(n, n, n, 0)
+		local grid = G3.DenseGrid3d.new(n, n, n, 0)
 		for k = 0, n - 1 do
 			for j = 0, n - 1 do
 				for i = 0, n - 1 do

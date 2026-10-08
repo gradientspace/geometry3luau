@@ -1,4 +1,4 @@
--- Every module in the package loads, and the C# float aliases resolve.
+-- Every module in the package loads, and nested names resolve.
 return function(G3, h)
 	h:test("all modules load", function()
 		G3.LoadAll()
@@ -11,9 +11,11 @@ return function(G3, h)
 		end
 		h.truthy(n > 100, "module count " .. n)
 	end)
-	h:test("aliases", function()
-		h.eq(G3.Vector3f, G3.Vector3d)
-		h.eq(G3.Frame3f, G3.Frame3d)
+	h:test("names", function()
+		h.eq(G3.Vector3d.ClassName, "Vector3d")
+		-- only the double types are ported (no Vector3f), and nothing shadows the Roblox Vector3
+		h.eq(G3.Vector3f, nil)
+		h.eq(G3.Vector3, nil)
 		h.truthy(G3.Index3i.new ~= nil)
 		h.eq(G3.MeshComponents.VertexNormals, 1)
 		h.truthy(type(G3.Version) == "string")

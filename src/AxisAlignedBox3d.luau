@@ -1,5 +1,5 @@
 --!native
--- Port of geometry3Sharp math/AxisAlignedBox3d.cs (also used for AxisAlignedBox3f)
+-- Port of geometry3Sharp math/AxisAlignedBox3d.cs (AxisAlignedBox3d; AxisAlignedBox3f is not ported, see PORTING.md)
 -- Copyright (c) Ryan Schmidt (rms@gradientspace.com) - All Rights Reserved
 -- Distributed under the Boost Software License, Version 1.0. http://www.boost.org/LICENSE_1_0.txt
 --
@@ -144,7 +144,7 @@ function AxisAlignedBox3d.CompareTo(self: AxisAlignedBox3d, other: AxisAlignedBo
 	return c
 end
 
--- See Box3.Corner for details on which corner is which
+-- See Box3d.Corner for details on which corner is which
 function AxisAlignedBox3d.Corner(self: AxisAlignedBox3d, i: number): Vector3d.Vector3d
 	local b1 = bit32.band(i, 1) ~= 0
 	local b2 = bit32.band(i, 2) ~= 0
@@ -164,7 +164,7 @@ function AxisAlignedBox3d.Point(self: AxisAlignedBox3d, xi: number, yi: number, 
 end
 
 -- TODO
---public void Rotate(Quaternionf rotation)
+--public void Rotate(Quaterniond rotation)
 --public void Scale(Vector3d vScale)
 
 function AxisAlignedBox3d.Expand(self: AxisAlignedBox3d, fRadius: number)

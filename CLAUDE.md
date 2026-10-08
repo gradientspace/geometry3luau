@@ -4,7 +4,8 @@ geometry3luau is a Luau port of the C# library [geometry3Sharp](https://github.c
 (branch `dotnet8`) for Roblox, plus a thin conversion layer to/from Roblox `EditableMesh` / `MeshPart`.
 
 ## Rules
-- The port is line-by-line: keep C# class/method names and algorithm structure. Follow **PORTING.md** for every
+- The port is line-by-line: keep C# class/method names (including the `Vector3d`-style `d` suffixes) and
+  algorithm structure. Only the double versions of C# float/double types are ported. Follow **PORTING.md** for every
   translation decision (0-based ids, Index3i as arrays, immutable vectors, properties -> methods,
   ref/out -> extra returns, iterators). When adding a port, put "Port of geometry3Sharp <path>" and the Boost
   license lines in the module header and list API differences there.

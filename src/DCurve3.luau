@@ -14,7 +14,8 @@
 --       DCurve3.FromVertices(verticesIn, bClosed, bTakeOwnership?)  List<Vector3d> (1-based Luau array) or an iterator
 --       DCurve3.FromCopy(copy)                              new DCurve3(DCurve3 copy)
 --       DCurve3.FromSampledCurve(icurve)                    new DCurve3(ISampledCurve3d) (needs :Vertices() iterator and .Closed / :Closed())
---   * SetVertices(v, bTakeOwnership?) accepts a Luau array of Vector3d or an iterator (VectorArray3d not ported).
+--   * SetVertices(v, bTakeOwnership?) accepts a Luau array of Vector3d, an iterator, or a VectorArray3d
+--     (C# SetVertices(VectorArray3d), always copies).
 --   * DistanceSquared(p) -> dist, iNearSeg, fNearSegT   (C# out params as extra returns)
 --   * The Polygon2d constructor is not ported (Polygon2d is not part of this port yet).
 
@@ -22,6 +23,7 @@ local Vector3d = require(script.Parent.Vector3d)
 local Segment3d = require(script.Parent.Segment3d)
 local AxisAlignedBox3d = require(script.Parent.AxisAlignedBox3d)
 local MathUtil = require(script.Parent.MathUtil)
+local VectorArray3d = require(script.Parent.VectorArray).VectorArray3d
 
 local DCurve3 = {}
 DCurve3.__index = DCurve3
@@ -90,9 +92,11 @@ function DCurve3:SetVertex(i: number, v)
 	self.Timestamp += 1
 end
 
--- SetVertices(IEnumerable<Vector3d>) / SetVertices(List<Vector3d>, bTakeOwnership)
+-- SetVertices(IEnumerable<Vector3d>) / SetVertices(List<Vector3d>, bTakeOwnership) / SetVertices(VectorArray3d)
 function DCurve3:SetVertices(v: any, bTakeOwnership: boolean?)
-	if bTakeOwnership and type(v) == "table" then
+	if type(v) == "table" and getmetatable(v) == VectorArray3d then
+		self.vertices = v:AsArray()
+	elseif bTakeOwnership and type(v) == "table" then
 		self.vertices = v
 	else
 		self.vertices = toArray(v)

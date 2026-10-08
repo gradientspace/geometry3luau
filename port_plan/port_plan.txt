@@ -1,0 +1,1274 @@
+geometry3luau - PORT PLAN for the rest of geometry3Sharp
+=========================================================
+Source: gradientspace/geometry3Sharp, branch dotnet8 (commit 4664ac3, 2026-01-05): 338 .cs files.
+About 130 of the files are already ported (listed at the end). Everything else is listed below.
+
+HOW TO READ AN ENTRY
+  [rec]  LEAF  TypeName(s)                      source file, C# line count
+         Description.
+         used by: ...   needs: ...
+
+  [rec]   My recommendation. port = worth porting; maybe = useful in some cases; skip = probably not
+          worth it on Roblox; alias = trivial, just an alias or a Luau idiom.
+  LEAF    Nothing else in geometry3Sharp references this type (only its own file does). Leaf types are
+          usually safe to drop without affecting anything else.
+  used by Other geometry3Sharp files that reference the type. A name ending in * is already ported (so
+          porting the type may unlock a missing feature there). "-" means none, i.e. LEAF.
+  needs   Not-yet-ported files this one depends on (named by their main type). Deleting one of those
+          means deleting this too, or reworking it. Already-ported dependencies are not listed.
+          Both lists are computed per source file and name a file by its type when it has one type,
+          otherwise by its file name (e.g. "BoxGenerators"). Entries that share a file show the same
+          needs.
+
+ORDERING
+  Groups are ordered by the order I suggest porting them in, judged by value for Roblox modelling and
+  by what each group depends on. Within a group, entries are roughly in dependency order (things
+  higher up are needed by things lower down). Float types (Vector3f, Frame3f, ...) are already
+  aliases of the double types (see PORTING.md), so they are not listed.
+
+
+########################################################################################################
+## 1. SMALL FOUNDATIONS
+## Small value types and helpers that the later groups need. Each one is small, so port them as the
+## groups below require them.
+########################################################################################################
+[port]        AxisAlignedBox2d                                       math/AxisAlignedBox2d.cs, 338 lines
+              2D axis-aligned bounding box (min/max Vector2d) with containment, union, distance and
+              scaling helpers. Needed by nearly all 2D code.
+              used by: Arc2d, Arrangement2d, AutoHoleFill, BoundsUtil*, Box2d, Circle2d, DGraph2,
+              GeneralPolygon2d, gSerialization, Hexagon2d, IntrAxisBox2AxisBox2,
+              IntrSegment2AxisAlignedBox2, MeshInsertUVPolyCurve, PlanarComplex, PlanarHoleFiller,
+              PlanarSpansFiller, Polygon2d, PolygonFont2d, PolyLine2d, RandomSampling, SVGWriter,
+              TilingUtil, TriangleBinsGrid2d, TriangulatedPolygonGenerator   needs: -
+
+[alias]       AxisAlignedBox2f                                       math/AxisAlignedBox2f.cs, 283 lines
+              Float version of AxisAlignedBox2d. Becomes an alias in init.luau once AxisAlignedBox2d
+              exists.
+              used by: BoundsUtil*, Implicit2d, ImplicitOperators, MarchingQuads   needs: -
+
+[port]        Matrix2d                                                       math/Matrix2d.cs, 249 lines
+              2x2 double matrix: rotation, multiply, determinant, inverse and eigen-decomposition. Used
+              by 2D polygons, ellipses and MeshLocalParam.
+              used by: Box2d, ContMinCircle2, Ellipse2d, EllipseArc2d, GeneralPolygon2d, MeshLocalParam,
+              PointSplatsGenerator, Polygon2d, SphericalFibonacciPointSet*, TransformSequence2,
+              USDAReader, USDCReader, USDFile   needs: Matrix2f
+
+[alias]       Matrix2f                                                     math/FloatTypes.cs, 279 lines
+              Float-storage Matrix2d (the other float types in this file, Matrix3f/Quaternionf/Frame3f,
+              are already aliased). Alias it to Matrix2d.
+              used by: Matrix2d   needs: -
+
+[port]        Box2d                                                              math/Box2.cs, 286 lines
+              2D oriented box (center, two axes, extents) with corners, containment and distance. Used
+              by ContMinBox2, Polygon2d and Polygon2dBoxTree.
+              used by: ContMinBox2, DistPoint2Box2, Polygon2d, Polygon2dBoxTree   needs:
+              AxisAlignedBox2d, Matrix2d, VectorTuple
+
+[port]        Vector4d                                                       math/Vector4d.cs, 257 lines
+              4-component double vector. Needed by Matrix4d and FastQuaternionSVD.
+              used by: FastQuaternionSVD, MathUtil*, Matrix4d, USDFile, Vector2d*, Vector3d*   needs: -
+
+[port]        Matrix4d                                                       math/Matrix4d.cs, 397 lines
+              4x4 double matrix (affine transforms). Needed by MeshTransforms, glTF and USD.
+              used by: GLTFFile, GLTFReader, MeshTransforms, USDAReader, USDCReader, USDFile,
+              USDMeshReader   needs: Vector4d
+
+[port]        Vector3dTuple2, Vector3dTuple3, Vector3fTuple3, Vector2dTuple2, Vector2dTuple3, Vector2dTuple4
+              math/VectorTuple.cs, 124 lines
+              Fixed-size tuples of 2-4 vectors with indexers, used where C# avoided heap arrays. In Luau
+              these are plain arrays; port as tiny constructors or inline them.
+              used by: Box2d, ContMinCircle2, IntrTriangle3Triangle3*, MeshIsoCurves, MeshMeshCut,
+              MeshTransforms, QueryTuple2d*, TransformSequence*, TransformSequence2   needs: -
+
+[port]        MeshTransforms, TransformWrapper                         mesh/MeshTransforms.cs, 406 lines
+              Static helpers that translate, scale, rotate and frame-convert a whole mesh (positions and
+              normals), plus TransformWrapper, a bundle of optional position and normal transform
+              functions. Widely used by mesh ops and IO.
+              used by: GLTFReader, MeshEditor*, MeshInsertProjectedPolygon, MeshMeshCut,
+              PlanarHoleFiller, PlanarSpansFiller, TriangulatedPolygonGenerator   needs: Matrix4d,
+              VectorTuple
+
+[port]        MeshIndexUtil                                              mesh/MeshIndexUtil.cs, 59 lines
+              Small helpers for vertex/triangle index sets, such as one-ring triangles of a vertex set
+              and triangles to edge loops. Used by MeshLoopClosure and MeshInsertProjectedPolygon.
+              used by: MeshInsertProjectedPolygon, MeshLoopClosure   needs: -
+
+[port]        SetGroupBehavior, MeshOps                                    mesh_ops/MeshOps.cs, 42 lines
+              SetGroupBehavior is the 'ignore / auto-generate / set to constant' policy for face-group
+              ids on newly created triangles. MeshOps is an empty placeholder. Used by the extrude and
+              stitch ops.
+              used by: MeshExtrudeFaces, MeshExtrudeMesh, MeshStitchLoops   needs: -
+
+[maybe]       VectorArray3, VectorArray3d, VectorArray3f, VectorArray3i, IndexArray3i, VectorArray2, VectorArray2d, VectorArray2f, IndexArray2i, VectorArray4, IndexArray4i
+              core/VectorArray.cs, 359 lines
+              Flat fixed-size numeric arrays with vector-style get/set (e.g. float[] viewed as
+              Vector3f[]). Mesh generators and polygons store data in them. Port a minimal version (or
+              map to Luau arrays of Vector3d) when the generators are ported.
+              used by: BoxGenerators, BufferUtil, CurveGenerators, CurveSampler2, CylinderGenerators,
+              DCurve3*, DiscGenerators, MeshGenerator, PlaneGenerators, PointSplatsGenerator, Polygon2d,
+              PolyLine2d, PolyLine3d, RevolveGenerator, SimpleMesh, TriangulatedPolygonGenerator,
+              TubeGenerator   needs: -
+
+
+########################################################################################################
+## 2. MESH OPERATIONS THAT NEED ONLY WHAT IS ALREADY PORTED (quick wins)
+## 3D mesh editing ops. Apart from group 1 helpers (MeshTransforms, SetGroupBehavior) they depend only
+## on DMesh3, the selections, EdgeLoop, the remeshers and the AABB tree, which are already ported. These
+## have the best value for effort for Roblox modelling.
+########################################################################################################
+[port]        MeshPlaneCut                                           mesh_ops/MeshPlaneCut.cs, 412 lines
+              Slices a mesh with a plane: splits crossing edges, deletes the triangles on the positive
+              side, and returns the cut boundary as EdgeLoops/EdgeSpans. Has an optional simple fill of
+              the cut holes.
+              used by: PlanarHoleFiller   needs: -
+
+[port]        MeshExtrudeLoop                                      mesh_ops/MeshExtrudeLoop.cs, 74 lines
+              Duplicates a boundary EdgeLoop at new positions (given by a function) and stitches the old
+              and new loops with a ring of triangles.
+              used by: MeshLoopClosure   needs: -
+
+[port]        MeshExtrudeFaces                                   mesh_ops/MeshExtrudeFaces.cs, 113 lines
+              Extrudes a set of triangles along their normals (or a custom offset) and connects the old
+              and new borders with triangle strips.
+              used by: SmoothedHoleFill   needs: MeshOps
+
+[port]  LEAF  MeshExtrudeMesh                                     mesh_ops/MeshExtrudeMesh.cs, 123 lines
+              Extrudes the whole mesh: copies it, offsets the copy, and stitches matching boundary
+              loops. Turns an open surface into a thin solid shell.
+              used by: -   needs: MeshOps
+
+[port]  LEAF  MeshStitchLoops                                     mesh_ops/MeshStitchLoops.cs, 190 lines
+              Connects two EdgeLoops (possibly with different vertex counts, optionally with known
+              vertex correspondences) with a strip of triangles.
+              used by: -   needs: MeshOps
+
+[port]        MeshIterativeSmooth                              mesh_ops/MeshIterativeSmooth.cs, 83 lines
+              Simple iterative Laplacian smoothing (uniform, cotan or mean-value weights) of a vertex
+              subset, with an optional reprojection function.
+              used by: MeshLoopClosure   needs: -
+
+[port]        MeshLoopSmooth                                        mesh_ops/MeshLoopSmooth.cs, 74 lines
+              Smooths the vertices of an EdgeLoop along the loop (curve Laplacian), with optional
+              reprojection.
+              used by: MeshLoopClosure   needs: -
+
+[maybe] LEAF  MeshLoopClosure                                     mesh_ops/MeshLoopClosure.cs, 260 lines
+              Closes an open boundary loop by extruding it to a plane, smoothing, filling and remeshing.
+              A specialised 'cap this opening' helper.
+              used by: -   needs: MeshExtrudeLoop, MeshIndexUtil, MeshIterativeSmooth, MeshLoopSmooth
+
+[port]  LEAF  MeshRegionBoundaryLoops               mesh_selection/MeshRegionBoundaryLoops.cs, 553 lines
+              Extracts the boundary EdgeLoops of a triangle subset (a region) instead of the open mesh
+              boundary. Handles bowtie vertices.
+              used by: -   needs: -
+
+[maybe]       MeshFacesFromLoop                           mesh_selection/MeshFacesFromLoop.cs, 286 lines
+              Finds the triangles enclosed by a closed vertex loop embedded in the mesh, using a seed
+              triangle or the smaller side.
+              used by: MeshTrimLoop   needs: -
+
+[maybe] LEAF  MeshTrimLoop                                           mesh_ops/MeshTrimLoop.cs, 167 lines
+              Deletes the triangles inside a trimming curve drawn on the surface, then remeshes the new
+              border to conform to the curve. Uses MeshFacesFromLoop.
+              used by: -   needs: MeshFacesFromLoop
+
+[maybe] LEAF  EdgeLoopRemesher                                       mesh/EdgeLoopRemesher.cs, 231 lines
+              Remesher variant that only splits, collapses and smooths along a single EdgeLoop, for
+              resampling a boundary or seam to a target edge length.
+              used by: -   needs: -
+
+[maybe] LEAF  FaceGroupOptimizer                                   mesh/FaceGroupOptimizer.cs, 294 lines
+              Cleans up face-group boundaries: clips thin 'fins', fills 'ears' and tiny holes by
+              reassigning triangles between groups, and can dilate/contract groups by N rings.
+              used by: -   needs: -
+
+[maybe] LEAF  IMeshComponentManager, MeshDecomposition              mesh/MeshDecomposition.cs, 264 lines
+              Splits a mesh into chunks under a maximum vertex/triangle count (e.g. for engine mesh-size
+              limits) and hands each chunk to a manager callback. Could help with EditableMesh limits.
+              used by: -   needs: -
+
+[maybe] LEAF  DSubmesh3Set                                                mesh/DSubmesh3Set.cs, 93 lines
+              Builds a DSubmesh3 for each key in a set (e.g. each face group) from a key -> triangles
+              function.
+              used by: -   needs: -
+
+[maybe] LEAF  MeshSpatialSort                                     mesh_ops/MeshSpatialSort.cs, 292 lines
+              Sorts a set of closed meshes into 'outer' solids and the cavities inside them, using
+              containment and winding tests.
+              used by: -   needs: -
+
+[maybe] LEAF  MeshAssembly                                           mesh_ops/MeshAssembly.cs, 131 lines
+              Splits a mesh's connected components into closed solids and open surfaces, merging
+              coincident edges and removing duplicates first.
+              used by: -   needs: -
+
+[maybe] LEAF  EditMeshSpatial                                      spatial/EditMeshSpatial.cs, 105 lines
+              Ray-cast structure for a mesh under local edits: masks removed triangles in the base AABB
+              tree and tests new triangles directly.
+              used by: -   needs: -
+
+
+########################################################################################################
+## 3. MESH GENERATORS (primitives)
+## Parametric primitive meshes. Useful for procedural Roblox content. Generators write into VectorArray
+## buffers and then call MakeDMesh. Port MeshGenerator with only MakeDMesh (MakeSimpleMesh/MakeNTMesh
+## need group 11).
+########################################################################################################
+[port]        MeshGenerator                                 mesh_generators/MeshGenerators.cs, 314 lines
+              Abstract base for all generators: vertex/normal/uv/triangle/group buffers, Generate(),
+              MakeDMesh(). Also has CircularSection (cross-section helper).
+              used by: BoxGenerators, CylinderGenerators, DiscGenerators, PlanarHoleFiller,
+              PlanarSpansFiller, PlaneGenerators, PointSplatsGenerator, Radial3DArrowGenerator,
+              RevolveGenerator, Sphere3Generator_NormalizedCube, TriangulatedPolygonGenerator,
+              TubeGenerator   needs: NTMesh3, SimpleMesh, VectorArray
+
+[port]        TrivialBox3Generator                           mesh_generators/BoxGenerators.cs, 234 lines
+              Minimal 8-vertex or 24-vertex box (optionally without shared vertices, for flat normals).
+              MeshEditor uses it to append debug boxes.
+              used by: MeshEditor*, Util*   needs: MeshGenerator, VectorArray
+
+[port]        GridBox3Generator                              mesh_generators/BoxGenerators.cs, 234 lines
+              Box with each face subdivided into a grid of quads. Base for the cube-sphere.
+              used by: Sphere3Generator_NormalizedCube   needs: MeshGenerator, VectorArray
+
+[port]  LEAF  Sphere3Generator_NormalizedCube              mesh_generators/SphereGenerators.cs, 56 lines
+              Sphere made by normalizing a gridded box. Even triangle distribution and no pole
+              singularities.
+              used by: -   needs: BoxGenerators, MeshGenerator
+
+[port]  LEAF  OpenCylinderGenerator                     mesh_generators/CylinderGenerators.cs, 447 lines
+              Uncapped cylinder or tapered tube along +Y.
+              used by: -   needs: MeshGenerator, VectorArray
+
+[port]  LEAF  CappedCylinderGenerator                   mesh_generators/CylinderGenerators.cs, 447 lines
+              Capped cylinder/frustum with optional wedge sections.
+              used by: -   needs: MeshGenerator, VectorArray
+
+[port]  LEAF  ConeGenerator                             mesh_generators/CylinderGenerators.cs, 447 lines
+              Cone with base cap, optional wedge sections.
+              used by: -   needs: MeshGenerator, VectorArray
+
+[port]        VerticalGeneralizedCylinderGenerator      mesh_generators/CylinderGenerators.cs, 447 lines
+              Stack of circular sections with varying radius and height along +Y. Used for arrows and
+              lathe-like shapes.
+              used by: Radial3DArrowGenerator   needs: MeshGenerator, VectorArray
+
+[maybe] LEAF  Radial3DArrowGenerator                        mesh_generators/ArrowGenerators.cs, 39 lines
+              3D arrow (shaft and cone head) built on VerticalGeneralizedCylinderGenerator.
+              used by: -   needs: CylinderGenerators, MeshGenerator
+
+[port]  LEAF  TrivialDiscGenerator, PuncturedDiscGenerator  mesh_generators/DiscGenerators.cs, 104 lines
+              Triangle-fan disc and annulus (disc with hole), with optional angular sections.
+              used by: -   needs: MeshGenerator, VectorArray
+
+[port]        TrivialRectGenerator, GriddedRectGenerator   mesh_generators/PlaneGenerators.cs, 375 lines
+              Two-triangle rectangle and a rectangle subdivided into a grid, with UV modes and arbitrary
+              plane normal. Used by the planar hole fillers and the polygon triangulator.
+              used by: PlanarHoleFiller, PlanarSpansFiller, TriangulatedPolygonGenerator   needs: Arc2d,
+              MeshGenerator, VectorArray
+
+[maybe] LEAF  RoundRectGenerator                           mesh_generators/PlaneGenerators.cs, 375 lines
+              Rectangle with rounded corners (per-corner sharp flags). Needs Arc2d.
+              used by: -   needs: Arc2d, MeshGenerator, VectorArray
+
+[skip]  LEAF  PointSplatsGenerator                     mesh_generators/PointsMeshGenerators.cs, 72 lines
+              Makes one small triangle 'splat' per point and normal, for visualizing point clouds.
+              used by: -   needs: Matrix2d, MeshGenerator, VectorArray
+
+[maybe] LEAF  VoxelSurfaceGenerator                   mesh_generators/VoxelSurfaceGenerator.cs, 99 lines
+              Blocky Minecraft-style mesh of the exposed faces of a binary voxel grid (Bitmap3), with
+              optional per-block colors and mesh splitting by size.
+              used by: -   needs: Colorf
+
+[maybe] LEAF  Curve3Axis3RevolveGenerator, Curve3Curve3RevolveGenerator
+              mesh_generators/RevolveGenerator.cs, 330 lines
+              Lathe/revolve: sweeps a 3D profile curve around an axis, or along another curve. Needs
+              ArcLengthParam and CurveUtils (group 8).
+              used by: -   needs: ArcLengthParam, CurveUtils, MeshGenerator, VectorArray
+
+[maybe]       TubeGenerator                               mesh_generators/GenCylGenerators.cs, 206 lines
+              Sweeps a 2D polygon profile along a 3D polyline path into a tube, with optional caps.
+              Needs Polygon2d (group 6). Also unlocks MeshEditor.AppendPathSolid.
+              used by: MeshEditor*, MeshTopology   needs: CurveUtils, MeshGenerator, Polygon2d,
+              PolyLine2d, VectorArray
+
+
+########################################################################################################
+## 4. LINEAR SOLVERS + LAPLACIAN SMOOTHING / DEFORMATION
+## Sparse matrices and conjugate-gradient solvers, and the Laplacian smoother and deformer built on
+## them. These give smooth, high-quality hole fills and handle-based deformation. It is mostly numeric
+## code, so it ports easily but must be performance-checked in Luau.
+########################################################################################################
+[port]        IMatrix                                                       solvers/IMatrix.cs, 16 lines
+              Minimal matrix interface (Rows, Columns, Set, Get).
+              used by: DenseMatrix, SparseMatrix   needs: -
+
+[port]        DenseVector                                               solvers/DenseVector.cs, 53 lines
+              Dense double vector with dot and norm.
+              used by: DenseMatrix   needs: -
+
+[port]        DenseMatrix                                              solvers/DenseMatrix.cs, 289 lines
+              Row-major dense matrix with multiply, transpose and simple ops. Used by fitting, Bezier
+              and Cholesky code.
+              used by: BezierCurve2, CholeskyDecomposition, PackedSparseMatrix, QuadraticFit2,
+              SparseMatrix   needs: DenseVector, IMatrix
+
+[port]        SymmetricSparseMatrix, DiagonalMatrix                   solvers/SparseMatrix.cs, 362 lines
+              Dictionary-based sparse symmetric matrix (upper triangle) and diagonal matrix. Used to
+              assemble Laplacian systems.
+              used by: LaplacianCurveDeformer, LaplacianMeshDeformer, LaplacianMeshSmoother,
+              PackedSparseMatrix   needs: DenseMatrix, IMatrix, PackedSparseMatrix
+
+[port]        PackedSparseMatrix, matrix_entry                  solvers/PackedSparseMatrix.cs, 628 lines
+              Compressed row-wise sparse matrix with fast matrix*vector multiply (parallel in C#). The
+              workhorse of the CG solvers.
+              used by: LaplacianCurveDeformer, LaplacianMeshDeformer, LaplacianMeshSmoother,
+              SparseMatrix   needs: DenseMatrix, SparseMatrix
+
+[port]        SparseSymmetricCG, SparseSymmetricCGMultipleRHS    solvers/SparseSymmetricCG.cs, 552 lines
+              Preconditioned conjugate-gradient solver for symmetric sparse systems, with single and
+              multiple right-hand sides (x,y,z at once).
+              used by: LaplacianCurveDeformer, LaplacianMeshDeformer, LaplacianMeshSmoother   needs:
+              BufferUtil
+
+[maybe]       BufferUtil, ArrayAlias                                       core/BufferUtil.cs, 583 lines
+              Array utilities: vector math on double[] (Dot, MultiplyAdd, ...), conversions, byte
+              packing and zlib compression. Port only the numeric helpers the solvers need and skip the
+              byte/zlib/reflection parts.
+              used by: DMesh3Builder*, LaplacianCurveDeformer, LaplacianMeshDeformer,
+              LaplacianMeshSmoother, MeshBoundaryLoops*, SparseSymmetricCG, SymmetricEigenSolver
+              needs: VectorArray
+
+[maybe] LEAF  CholeskyDecomposition                          solvers/CholeskyDecomposition.cs, 229 lines
+              Dense Cholesky factorization and solve for symmetric positive-definite matrices.
+              used by: -   needs: DenseMatrix
+
+[port]        LaplacianMeshSmoother                         mesh_ops/LaplacianMeshSmoother.cs, 444 lines
+              Global least-squares Laplacian smoothing with soft position constraints (solved with CG).
+              Includes RegionSmooth for smoothing a patch, e.g. a hole fill.
+              used by: SmoothedHoleFill   needs: BufferUtil, PackedSparseMatrix, SparseMatrix,
+              SparseSymmetricCG
+
+[port]  LEAF  LaplacianMeshDeformer                         mesh_ops/LaplacianMeshDeformer.cs, 338 lines
+              Laplacian-coordinate deformation: move constrained handle vertices and solve for the rest
+              to keep local surface detail.
+              used by: -   needs: BufferUtil, PackedSparseMatrix, SparseMatrix, SparseSymmetricCG
+
+[port]        SmoothedHoleFill                                   mesh_ops/SmoothedHoleFill.cs, 263 lines
+              High-quality hole fill: trivial fill, optional offset, remesh, Laplacian smooth, remesh
+              again. Needs MeshExtrudeFaces, LaplacianMeshSmoother and RegionRemesher.
+              used by: AutoHoleFill   needs: LaplacianMeshSmoother, MeshExtrudeFaces
+
+[maybe] LEAF  LaplacianCurveDeformer                          curve/LaplacianCurveDeformer.cs, 372 lines
+              LaplacianMeshDeformer applied to a DCurve3 polyline.
+              used by: -   needs: BufferUtil, PackedSparseMatrix, SparseMatrix, SparseSymmetricCG
+
+
+########################################################################################################
+## 5. EIGEN / SVD, FITTING, REGISTRATION
+## Small dense decompositions and the algorithms built on them: best-fit planes, oriented bounding
+## boxes, and mesh-to-mesh alignment (ICP).
+########################################################################################################
+[port]        SymmetricEigenSolver                            solvers/SymmetricEigenSolver.cs, 658 lines
+              Eigen-decomposition of symmetric NxN matrices (Householder tridiagonalization and QR).
+              Used by the point-fitting classes.
+              used by: GaussPointsFit3, OrthogonalPlaneFit3, QuadraticFit2   needs: BufferUtil
+
+[port]        SingularValueDecomposition                solvers/SingularValueDecomposition.cs, 703 lines
+              General SVD of an MxN matrix (one-sided Jacobi). Used by MeshICP for best rotations.
+              used by: MeshICP   needs: -
+
+[maybe] LEAF  FastQuaternionSVD, SymmetricMatrix3d               solvers/FastQuaternionSVD.cs, 456 lines
+              Fast 3x3 SVD using Jacobi rotations stored as quaternions (McAdams et al.). Faster than
+              the general SVD for 3x3 cases.
+              used by: -   needs: Vector4d
+
+[port]        MatrixUtil                                                    math/MatrixUtil.cs, 84 lines
+              Helpers for 3x3 matrices stored as double[9] (identity, multiply, transpose, determinant).
+              Used by MeshICP.
+              used by: MeshICP   needs: -
+
+[port]        GaussPointsFit3                                approximation/GaussPointsFit3.cs, 120 lines
+              Fits an oriented box or Gaussian to 3D points: the mean is the center and the covariance
+              eigenvectors are the axes.
+              used by: ContOrientedBox3   needs: SymmetricEigenSolver
+
+[port]  LEAF  OrthogonalPlaneFit3                         approximation/OrthogonalPlaneFit3.cs, 63 lines
+              Least-squares best-fit plane through 3D points (orthogonal distance).
+              used by: -   needs: SymmetricEigenSolver
+
+[port]  LEAF  ContOrientedBox3                                         containment/ContBox3.cs, 37 lines
+              Oriented bounding box (Box3d) of a point set from the Gaussian fit, grown to contain all
+              points.
+              used by: -   needs: GaussPointsFit3
+
+[maybe] LEAF  MeshICP                                                     mesh_ops/MeshICP.cs, 312 lines
+              Iterative Closest Point: rigidly aligns a point set or mesh to a target mesh (AABB tree)
+              by repeated nearest-point matching and SVD.
+              used by: -   needs: MatrixUtil, SingularValueDecomposition
+
+
+########################################################################################################
+## 6. 2D POLYGONS AND 2D QUERIES
+## The 2D geometry core. It is a prerequisite for polygon insertion, triangulation, cutting, booleans,
+## tubes and all curve work (groups 7-9). Not useful alone, but a lot of the library depends on it.
+########################################################################################################
+[port]        QueryNumberType, Query2, Query2d, QueryBase                      math/Query2.cs, 364 lines
+              Robust-ish 2D orientation queries (point vs line, point vs triangle, point vs
+              circumcircle). Used by ConvexHull2, ContMinBox2 and Polygon2d.
+              used by: ContMinBox2, ConvexHull2, Polygon2d, Query2Int64   needs: -
+
+[maybe]       Query2Int64                                               math/Query2Integer.cs, 102 lines
+              Exact integer variant of Query2 (needs Vector2l and 64-bit ints, which Luau numbers cannot
+              hold exactly). Probably skip or approximate.
+              used by: ConvexHull2   needs: Query2
+
+[port]        PrimalQuery2d                                             math/PrimalQuery2d.cs, 329 lines
+              GTEngine primal 2D point queries (ToLine, ToTriangle, ToCircumcircle) with exact sign
+              handling. Used by MeshInsertUVPolyCurve.
+              used by: MeshInsertUVPolyCurve   needs: -
+
+[port]        IntrLine2Line2                                   intersection/IntrLine2Line2.cs, 130 lines
+              Intersection of two 2D lines.
+              used by: IntrLine2Segment2, IntrSegment2Segment2   needs: -
+
+[port]        IntrLine2Segment2                             intersection/IntrLine2Segment2.cs, 131 lines
+              Intersection of a 2D line and segment. Used by DGraph2Util and GraphSplitter2d.
+              used by: DGraph2Util, GraphSplitter2d   needs: IntrLine2Line2
+
+[port]        IntrSegment2Segment2                       intersection/IntrSegment2Segment2.cs, 190 lines
+              Intersection of two 2D segments (point or overlap interval). Used by Polygon2d,
+              Arrangement2d, MeshInsertUVPolyCurve and MeshMeshCut.
+              used by: Arrangement2d, MeshInsertUVPolyCurve, Polygon2d, SegmentSet2d   needs:
+              IntrLine2Line2
+
+[maybe]       IntrSegment2AxisAlignedBox2         intersection/IntrSegment2AxisAlignedBox2.cs, 132 lines
+              2D segment vs axis-aligned box clipping.
+              used by: IntrAxisBox2AxisBox2   needs: AxisAlignedBox2d
+
+[skip]  LEAF  IntrAxisBox2AxisBox2                        intersection/IntrAxisBox2AxisBox2.cs, 47 lines
+              Overlap test for two 2D axis-aligned boxes (trivial).
+              used by: -   needs: AxisAlignedBox2d, IntrSegment2AxisAlignedBox2
+
+[skip]  LEAF  DistLine2Line2                                       distance/DistLine2Line2.cs, 101 lines
+              Distance between two 2D lines.
+              used by: -   needs: -
+
+[skip]  LEAF  DistLine2Segment2                                 distance/DistLine2Segment2.cs, 120 lines
+              Distance between a 2D line and segment.
+              used by: -   needs: -
+
+[maybe] LEAF  DistSegment2Segment2                           distance/DistSegment2Segment2.cs, 305 lines
+              Distance between two 2D segments.
+              used by: -   needs: -
+
+[skip]  LEAF  DistPoint2Box2                                        distance/DistPoint2Box2.cs, 84 lines
+              Distance from a 2D point to an oriented Box2d.
+              used by: -   needs: Box2d
+
+[alias]       IDuplicatable                                               core/g3Interfaces.cs, 16 lines
+              'Duplicate()' deep-copy interface implemented by Polygon2d/GeneralPolygon2d. In Luau this
+              is just a :Duplicate() method.
+              used by: DeepCopy, GeneralPolygon2d, Polygon2d   needs: -
+
+[skip]  LEAF  DeepCopy                                                        core/DeepCopy.cs, 33 lines
+              One-line deep copy of lists of IDuplicatable objects.
+              used by: -   needs: IDuplicatable
+
+[port]        ITransform2, TransformSequence2                      math/TransformSequence2.cs, 317 lines
+              2D counterpart of TransformSequence (stacked translate/rotate/scale), plus ITransform2,
+              the interface curves and polygons use to apply 2D transforms.
+              used by: Arc2d, BezierCurve2, Circle2d, Ellipse2d, EllipseArc2d, ICurve, NURBSCurve2,
+              ParametricCurveSequence2, PlanarComplex, Polygon2d, PolyLine2d, Segment2*   needs:
+              Matrix2d, VectorTuple
+
+[port]        IParametricCurve3d, ISampledCurve3d, IParametricCurve2d, IMultiCurve2d
+              curve/ICurve.cs, 74 lines
+              Curve interfaces: parametric/sampled 3D curves, parametric 2D curves (SampleT, Tangent,
+              ArcLength, Reverse) and multi-curves. In Luau these are documentation plus duck typing.
+              used by: Arc2d, BezierCurve2, BiArcFit2, Circle2d, CurveResampler, CurveSampler2,
+              CurveUtils, CurveUtils2, DCurve3*, Ellipse2d, EllipseArc2d, gSerialization, NURBSCurve2,
+              ParametricCurveSequence2, PlanarComplex, PlanarSolid2d, Polygon2d, PolyLine2d, Segment2*,
+              Segment3*, SVGWriter   needs: TransformSequence2
+
+[port]        Polygon2d, Polygon2DCurve                                    curve/Polygon2d.cs, 846 lines
+              Closed 2D polygon: area, winding, containment, point/segment distance, offset, simplify,
+              transforms, intersection. Polygon2DCurve wraps it as an IParametricCurve2d. Central 2D
+              type.
+              used by: Arrangement2d, AutoHoleFill, ConvexHull2, CurveUtils2, DCurve3*, DGraph2,
+              DGraph2Util, GeneralPolygon2d, GraphCells2d, gSerialization, MeshEditor*,
+              MeshInsertProjectedPolygon, MeshInsertUVPolyCurve, MeshTopology, PlanarComplex,
+              PlanarHoleFiller, PlanarSolid2d, PlanarSpansFiller, Polygon2dBoxTree, PolyLine2d,
+              PolySimplification2, SVGWriter, TubeGenerator   needs: AxisAlignedBox2d, Box2d,
+              ContMinBox2, ICurve, IDuplicatable, IntrSegment2Segment2, Matrix2d, Query2,
+              TransformSequence2, VectorArray
+
+[port]        GeneralPolygon2d                                      curve/GeneralPolygon2d.cs, 299 lines
+              Polygon with holes (outer Polygon2d and hole list): containment, area, transforms,
+              distance.
+              used by: CurveUtils2, DGraph2, GraphCells2d, gSerialization, MeshInsertPolygon,
+              PlanarComplex, PlanarHoleFiller, PlanarSolid2d, Polygon2dBoxTree, PolygonFont2d,
+              PolySimplification2, SegmentSet2d, SVGWriter, TriangulatedPolygonGenerator   needs:
+              AxisAlignedBox2d, IDuplicatable, Matrix2d, Polygon2d
+
+[port]        PolyLine2d, PolyLine2DCurve                                 curve/PolyLine2d.cs, 436 lines
+              Open 2D polyline: length, sampling, simplify, distance, transforms. PolyLine2DCurve wraps
+              it as a parametric curve.
+              used by: Arrangement2d, AutoHoleFill, DGraph2, DGraph2Util, gSerialization,
+              MeshInsertUVPolyCurve, MeshMeshCut, PlanarComplex, PolySimplification2, SVGWriter,
+              TubeGenerator   needs: AxisAlignedBox2d, ICurve, Polygon2d, TransformSequence2,
+              VectorArray
+
+[port]        ConvexHull2                                            comp_geom/ConvexHull2.cs, 390 lines
+              2D convex hull of a point set (incremental, with selectable query precision). Returns hull
+              indices and a Polygon2d.
+              used by: ContMinBox2   needs: Polygon2d, Query2, Query2Int64
+
+[maybe]       ContMinBox2                                          containment/ContMinBox2.cs, 306 lines
+              Minimum-area oriented 2D bounding box of points (rotating calipers on the convex hull).
+              Used by Polygon2d.MinBox.
+              used by: Polygon2d   needs: Box2d, ConvexHull2, Query2
+
+[maybe] LEAF  ContMinCircle2                                    containment/ContMinCircle2.cs, 402 lines
+              Minimum enclosing circle of 2D points (Welzl's algorithm).
+              used by: -   needs: Circle2d, Matrix2d, VectorTuple
+
+[maybe] LEAF  PolySimplification2                                curve/PolySimplification2.cs, 227 lines
+              Simplifies 2D polylines/polygons by greedy vertex removal within a deviation tolerance and
+              snaps near-straight runs to segments.
+              used by: -   needs: GeneralPolygon2d, Polygon2d, PolyLine2d
+
+[port]        IGridWorldIndexer2, GridLevelIndex2, IMultigridIndexer2, ScaleGridIndexer2, ShiftGridIndexer2, MultigridIndexer2
+              spatial/GridIndexing2.cs, 184 lines
+              2D versions of GridIndexing (world <-> grid-cell coordinate mappers). Needed by the 2D
+              hash grids and bins.
+              used by: PointHashGrid2d, SegmentHashGrid2d, TriangleBinsGrid2d   needs: -
+
+[port]        PointHashGrid2d                                      spatial/PointHashGrid2d.cs, 187 lines
+              Hash grid of 2D points for near-point queries. Used by Arrangement2d.
+              used by: Arrangement2d   needs: GridIndexing2
+
+[port]        TriangleBinsGrid2d                                spatial/TriangleBinsGrid2d.cs, 194 lines
+              Fixed 2D grid of bins for point-in-triangle queries. Used by MeshInsertUVPolyCurve.
+              used by: MeshInsertUVPolyCurve   needs: AxisAlignedBox2d, GridIndexing2
+
+[maybe] LEAF  SegmentHashGrid2d                                    spatial/SegmentHashGrid.cs, 243 lines
+              Hash grid of 2D segments for nearest-segment queries.
+              used by: -   needs: GridIndexing2
+
+[maybe] LEAF  Polygon2dBoxTree, GeneralPolygon2dBoxTree           spatial/Polygon2dBoxTree.cs, 240 lines
+              Oriented-box tree over polygon edges for fast 2D distance queries.
+              used by: -   needs: Box2d, GeneralPolygon2d, Polygon2d
+
+[maybe] LEAF  SegmentSet2d                                             spatial/SegmentSet2d.cs, 80 lines
+              Unsorted set of 2D segments with brute-force nearest and intersection queries.
+              used by: -   needs: GeneralPolygon2d, IntrSegment2Segment2
+
+
+########################################################################################################
+## 7. POLYGON INSERTION, TRIANGULATION, CUTTING, BOOLEANS
+## Embedding 2D polylines into meshes, which is the basis for polygon triangulation, projected decals
+## and imprints, and mesh-mesh cutting. The C# MeshBoolean is experimental and fragile (no coplanar
+## handling), so treat it as a stretch goal. A winding-number-and-marching-cubes boolean like MakeSolid
+## may serve Roblox better.
+########################################################################################################
+[port]        MeshInsertUVPolyCurve                         mesh_ops/MeshInsertUVPolyCurve.cs, 706 lines
+              Inserts a 2D polyline/polygon into a mesh whose vertices are (u,v) coordinates, splitting
+              edges and triangles so the curve becomes mesh edges. Core of everything else in this
+              group.
+              used by: MeshInsertPolygon, MeshInsertProjectedPolygon, MeshMeshCut, PlanarHoleFiller,
+              PlanarSpansFiller   needs: AxisAlignedBox2d, IntrSegment2Segment2, Polygon2d, PolyLine2d,
+              PrimalQuery2d, TriangleBinsGrid2d
+
+[port]        MeshInsertPolygon                                  mesh_ops/MeshInsertPolygon.cs, 86 lines
+              Wrapper around MeshInsertUVPolyCurve that inserts a GeneralPolygon2d and reports the
+              inserted edges and interior triangles.
+              used by: TriangulatedPolygonGenerator   needs: GeneralPolygon2d, MeshInsertUVPolyCurve
+
+[port]  LEAF  TriangulatedPolygonGenerator    mesh_generators/TriangulatedPolygonGenerator.cs, 100 lines
+              Triangulates a 2D polygon with holes by inserting it into a gridded rectangle and deleting
+              the outside triangles. Good for flat caps and text.
+              used by: -   needs: AxisAlignedBox2d, GeneralPolygon2d, MeshGenerator, MeshInsertPolygon,
+              MeshTransforms, PlaneGenerators, VectorArray
+
+[maybe] LEAF  MeshInsertProjectedPolygon               mesh_ops/MeshInsertProjectedPolygon.cs, 260 lines
+              Projects a 2D polygon onto a mesh region along a frame and inserts it as mesh edges
+              (imprint or decal outline).
+              used by: -   needs: MeshIndexUtil, MeshInsertUVPolyCurve, MeshTransforms, Polygon2d
+
+[port]        PointHashGrid3d                                      spatial/PointHashGrid3d.cs, 206 lines
+              Hash grid of 3D points for near-point queries and welding. Used by MeshMeshCut and
+              STLReader.
+              used by: MeshMeshCut, STLReader   needs: -
+
+[skip]        SafeListBuilder                                          core/SafeCollections.cs, 55 lines
+              Thread-safe List<T> builder for Parallel.ForEach. In Luau use a plain table.
+              used by: MeshMeshCut   needs: -
+
+[maybe]       MeshMeshCut                                             mesh_ops/MeshMeshCut.cs, 664 lines
+              Cuts one mesh along its intersection curves with another mesh (inserting the curves as
+              edges) and can then remove the part of the cut mesh contained in the other.
+              used by: MeshBoolean   needs: MeshInsertUVPolyCurve, MeshTransforms, PointHashGrid3d,
+              PolyLine2d, SafeListBuilder, VectorTuple
+
+[maybe] LEAF  MeshBoolean                                             mesh_ops/MeshBoolean.cs, 152 lines
+              Experimental mesh union built on MeshMeshCut: cut both meshes, delete the contained parts,
+              merge seams. Not robust in the C# version.
+              used by: -   needs: MeshMeshCut
+
+
+########################################################################################################
+## 8. GRAPHS, 3D CURVES, GEODESICS, ISO-CURVES
+## Edge-only graph structures (DGraph), curve utilities, and the algorithms that need them: iso-curve
+## extraction on meshes, geodesic distance, local parameterization (decals/UVs), and 2D arrangements.
+########################################################################################################
+[port]        DGraph, DGraphN                                                 curve/DGraph.cs, 654 lines
+              Base dynamic graph (vertices and edges, no faces), using the same refcount/small-list
+              design as DMesh3: append, remove, split and collapse edges, edge groups. DGraphN is the
+              dimensionless variant.
+              used by: DGraph2, DGraph3   needs: -
+
+[port]        DGraph3                                                        curve/DGraph3.cs, 257 lines
+              DGraph with 3D vertex positions and colors. Output of MeshIsoCurves.
+              used by: DGraph3Util, MeshIsoCurves, MeshTopology   needs: DGraph
+
+[port]        DGraph3Util                                                curve/DGraph3Util.cs, 341 lines
+              Extracts curves (open/closed vertex paths) from a DGraph3 and runs other graph utilities.
+              used by: MeshTopology   needs: DGraph3
+
+[port]  LEAF  MeshIsoCurves                                         mesh_ops/MeshIsoCurves.cs, 381 lines
+              Extracts iso-contours of a scalar function on a mesh surface as a DGraph3 (e.g. plane
+              slices or height-field contour lines), with optional root finding.
+              used by: -   needs: DGraph3, VectorTuple
+
+[maybe]       DGraph2                                                        curve/DGraph2.cs, 339 lines
+              DGraph with 2D positions: polygon/polyline append, bounds, distance queries. Base of
+              Arrangement2d and the planar graph tools.
+              used by: Arrangement2d, DGraph2Resampler, DGraph2Util, GraphCells2d, GraphSplitter2d,
+              SVGWriter   needs: AxisAlignedBox2d, DGraph, GeneralPolygon2d, Polygon2d, PolyLine2d
+
+[maybe] LEAF  DGraph2Util                                                curve/DGraph2Util.cs, 485 lines
+              DGraph2 utilities: extract curves and loops, chain edges, find intersections.
+              used by: -   needs: DGraph2, IntrLine2Segment2, Polygon2d, PolyLine2d
+
+[maybe] LEAF  DGraph2Resampler                                      curve/DGraph2Resampler.cs, 237 lines
+              Remesher for DGraph2: splits and collapses edges toward a target length.
+              used by: -   needs: DGraph2
+
+[maybe] LEAF  Arrangement2d                                        comp_geom/Arrangement2d.cs, 334 lines
+              Incrementally builds a planar arrangement of inserted segments and polylines (splitting at
+              intersections) as a DGraph2.
+              used by: -   needs: AxisAlignedBox2d, DGraph2, IntrSegment2Segment2, PointHashGrid2d,
+              Polygon2d, PolyLine2d
+
+[skip]  LEAF  GraphSplitter2d                                    comp_geom/GraphSplitter2d.cs, 192 lines
+              Splits a DGraph2 with infinite lines (slicing a planar graph).
+              used by: -   needs: DGraph2, IntrLine2Segment2
+
+[skip]  LEAF  GraphCells2d                                          comp_geom/GraphCells2d.cs, 157 lines
+              Finds the closed cells (faces) of a planar DGraph2 and returns them as polygons.
+              used by: -   needs: DGraph2, GeneralPolygon2d, Polygon2d
+
+[port]        MemoryPool                                                    core/MemoryPool.cs, 51 lines
+              Tiny object pool used by the Dijkstra and local-param code. In Luau a plain free list.
+              used by: DijkstraGraphDistance, MeshLocalParam   needs: -
+
+[port]        SparseList, SparseObjectList                                 core/SparseList.cs, 221 lines
+              List-like container that switches to a dictionary when sparse. In Luau a plain table
+              covers both.
+              used by: DijkstraGraphDistance, FaceGroupUtil*, MeshLocalParam   needs: -
+
+[port]  LEAF  DijkstraGraphDistance                             core/DijkstraGraphDistance.cs, 560 lines
+              Dijkstra shortest-path distances over mesh vertices or any graph from seed points, with
+              max-distance cutoff and path extraction. Approximates geodesic distance.
+              used by: -   needs: MemoryPool, SparseList
+
+[maybe] LEAF  MeshLocalParam                                       mesh_ops/MeshLocalParam.cs, 309 lines
+              Discrete exponential map: local 2D UV parameterization around a seed point on the surface
+              (for decals/stamps), based on Dijkstra propagation.
+              used by: -   needs: Matrix2d, MemoryPool, SparseList
+
+[skip]  LEAF  MeshTopology                                           mesh_ops/MeshTopology.cs, 229 lines
+              Work-in-progress: finds 'sharp' semantic edges/corners and builds a DGraph3 of feature
+              curves.
+              used by: -   needs: DGraph3, DGraph3Util, Polygon2d, TubeGenerator
+
+[maybe] LEAF  PolyLine3d                                                   curve/PolyLine3d.cs, 99 lines
+              Simple open 3D polyline (array of Vector3d) with bounds and segment iteration.
+              used by: -   needs: VectorArray
+
+[port]        CurveUtils, IWrappedCurve3d                                 curve/CurveUtils.cs, 226 lines
+              3D curve helpers: tangents, length, nearest point, ray-curve hits, inplace smoothing,
+              frames along a curve. Used by DCurve3, TubeGenerator and RevolveGenerator.
+              used by: DCurve3*, RevolveGenerator, SimpleCurveDeformers, TubeGenerator   needs:
+              DistRay3Segment3, ICurve
+
+[maybe] LEAF  CurveResampler                                          curve/CurveResampler.cs, 127 lines
+              Resamples a sampled 3D curve to split long and collapse short segments.
+              used by: -   needs: ICurve
+
+[skip]  LEAF  CurveGenerator, LineGenerator                           curve/CurveGenerators.cs, 59 lines
+              Minimal 3D curve generator base and a straight-line generator.
+              used by: -   needs: VectorArray
+
+[maybe]       CurveSample, IArcLengthParam, SampledArcLengthParam, CurveSample2d, IArcLengthParam2d, SampledArcLengthParam2d
+              curve/ArcLengthParam.cs, 188 lines
+              Arc-length parameterization of sampled 2D/3D curves (position, tangent at distance s).
+              Used by RevolveGenerator.
+              used by: RevolveGenerator   needs: -
+
+[maybe] LEAF  InPlaceIterativeCurveSmooth, ArcLengthSoftTranslation
+              curve/SimpleCurveDeformers.cs, 260 lines
+              Iterative smoothing of a DCurve3 range, and a soft drag that falls off with arc length.
+              used by: -   needs: CurveUtils
+
+[skip]  LEAF  SculptCurveDeformation, StandardSculptCurveDeformation, SculptCurveSmooth, SculptCurveMove
+              curve/SculptCurveDeformers.cs, 241 lines
+              Brush-style interactive deformers for DCurve3 (smooth and move within a radius). Editor-UI
+              oriented.
+              used by: -   needs: -
+
+[maybe] LEAF  DCurve3BoxTree                                         spatial/DCurveBoxTree.cs, 322 lines
+              Oriented-box tree over DCurve3 segments for fast ray and distance queries against a 3D
+              curve.
+              used by: -   needs: DistRay3Segment3, IntrRay3Box3
+
+
+########################################################################################################
+## 9. 2D PARAMETRIC CURVES, PLANAR COMPLEXES, PLANAR HOLE FILLING
+## Analytic 2D curves (arcs, circles, ellipses, Bezier, NURBS) and PlanarComplex, which assembles them
+## into closed regions. Mainly vector-art and CAD style tools. The planar hole fillers and AutoHoleFill
+## depend on PlanarComplex. Lowest priority of the geometry groups.
+########################################################################################################
+[maybe]       Circle2d                                                       curve/Circle2.cs, 163 lines
+              2D circle as a parametric curve (sample, tangent, area, containment, distance).
+              used by: ContMinCircle2, DistPoint2Circle2, gSerialization, IntrSegment2Circle2,
+              PlanarComplex, QuadraticFit2, SVGWriter   needs: AxisAlignedBox2d, ICurve,
+              TransformSequence2
+
+[maybe]       Arc2d                                                             curve/Arc2.cs, 222 lines
+              2D circular arc as a parametric curve. Also used by RoundRectGenerator and BiArcFit2.
+              used by: BiArcFit2, gSerialization, PlanarComplex, PlaneGenerators, SVGWriter   needs:
+              AxisAlignedBox2d, ICurve, TransformSequence2
+
+[maybe] LEAF  DistPoint2Circle2                                  distance/DistPoint2Circle2.cs, 78 lines
+              Distance from a 2D point to a circle.
+              used by: -   needs: Circle2d
+
+[skip]  LEAF  IntrSegment2Circle2                         intersection/IntrSegment2Circle2.cs, 138 lines
+              Intersection of a 2D segment and circle.
+              used by: -   needs: Circle2d
+
+[skip]        Ellipse2d                                                     curve/Ellipse2.cs, 316 lines
+              2D ellipse as a parametric curve, plus area and containment.
+              used by: PlanarComplex   needs: ICurve, Matrix2d, TransformSequence2
+
+[skip]        EllipseArc2d                                               curve/EllipseArc2.cs, 162 lines
+              Elliptical arc as a parametric curve.
+              used by: PlanarComplex   needs: ICurve, Matrix2d, TransformSequence2
+
+[skip]        Integrate1d                                                 math/Integrate1d.cs, 101 lines
+              Numerical integration (Romberg, Gaussian quadrature, trapezoid). Used for curve arc
+              length.
+              used by: BaseCurve2   needs: -
+
+[skip]        BaseCurve2                                                  curve/BaseCurve2.cs, 201 lines
+              Abstract base for derivative-based 2D curves (arc length by integration, parameter at
+              length).
+              used by: BezierCurve2, NURBSCurve2   needs: Integrate1d
+
+[skip]        BSplineBasis                                              curve/BSplineBasis.cs, 372 lines
+              B-spline basis functions (open/periodic knots, derivatives) used by NURBSCurve2.
+              used by: NURBSCurve2   needs: -
+
+[skip]  LEAF  BezierCurve2                                              curve/BezierCurve2.cs, 246 lines
+              2D Bezier curve of any degree.
+              used by: -   needs: BaseCurve2, DenseMatrix, ICurve, TransformSequence2
+
+[skip]        NURBSCurve2                                                curve/NURBSCurve2.cs, 492 lines
+              2D NURBS curve (weighted B-spline) with derivatives and sampling.
+              used by: CurveSampler2, PlanarComplex   needs: BaseCurve2, BSplineBasis, ICurve,
+              TransformSequence2
+
+[skip]        ParametricCurveSequence2                      curve/ParametricCurveSequence2.cs, 137 lines
+              Chain of 2D parametric curves treated as one (open or closed) curve.
+              used by: CurveSampler2, CurveUtils2, gSerialization, PlanarComplex   needs: ICurve,
+              TransformSequence2
+
+[skip]        CurveSampler2                                            curve/CurveSampler2.cs, 177 lines
+              Converts any 2D parametric curve to a polyline/polygon (uniform or auto-adaptive
+              sampling).
+              used by: PlanarComplex, PlanarSolid2d   needs: ICurve, NURBSCurve2,
+              ParametricCurveSequence2, VectorArray
+
+[skip]        CurveUtils2                                                curve/CurveUtils2.cs, 324 lines
+              2D curve helpers: convert curves to polygons, split into closed/open, signed area, tangent
+              normals.
+              used by: PlanarComplex, SVGWriter   needs: GeneralPolygon2d, ICurve,
+              ParametricCurveSequence2, Polygon2d
+
+[skip]        PlanarSolid2d                                             curve/PlanarSolid2d.cs, 99 lines
+              Region bounded by closed parametric curves (outer and holes). Curve-based counterpart of
+              GeneralPolygon2d.
+              used by: gSerialization, PlanarComplex   needs: CurveSampler2, GeneralPolygon2d, ICurve,
+              Polygon2d
+
+[skip]        PlanarComplex, ComplexSegment2d, ComplexEndpoint2d       curve/PlanarComplex.cs, 994 lines
+              Collection of 2D curves that can be chained into loops, find closed solid regions (outer
+              and holes), convert to polygons and transform. Used by SVG output and the planar fillers.
+              used by: PlanarHoleFiller, PlanarSpansFiller, SVGWriter   needs: Arc2d, AxisAlignedBox2d,
+              Circle2d, Colorf, CurveSampler2, CurveUtils2, Ellipse2d, EllipseArc2d, GeneralPolygon2d,
+              ICurve, NURBSCurve2, ParametricCurveSequence2, PlanarSolid2d, Polygon2d, PolyLine2d,
+              TransformSequence2
+
+[skip]  LEAF  BiArcFit2                                            approximation/BiArcFit2.cs, 379 lines
+              Fits a pair of circular arcs between two points with tangents (biarc interpolation).
+              used by: -   needs: Arc2d, ICurve
+
+[skip]  LEAF  QuadraticFit2                                    approximation/QuadraticFit2.cs, 177 lines
+              Least-squares fit of a general quadratic (conic) or circle to 2D points.
+              used by: -   needs: Circle2d, DenseMatrix, SymmetricEigenSolver
+
+[skip]        Hexagon2d                                                     curve/Hexagon2.cs, 130 lines
+              Regular hexagon (flat/pointy-top) with corners and bounds.
+              used by: TilingUtil   needs: AxisAlignedBox2d
+
+[skip]  LEAF  TilingUtil                                            containment/TilingUtil.cs, 120 lines
+              Computes translations to tile a 2D element in a bounds (regular grid or circle-packing hex
+              grid).
+              used by: -   needs: AxisAlignedBox2d, Hexagon2d
+
+[skip]  LEAF  RandomSampling                                       comp_geom/RandomSampling.cs, 39 lines
+              Random point in a 2D box or on a circle.
+              used by: -   needs: AxisAlignedBox2d
+
+[skip]  LEAF  PolygonFont2d                                            curve/PolygonFont2d.cs, 149 lines
+              Outline font stored as GeneralPolygon2d glyphs (read from g3 binary serialization).
+              Possible use for 3D text.
+              used by: -   needs: AxisAlignedBox2d, GeneralPolygon2d, gSerialization
+
+[maybe]       NormalHistogram                                       spatial/NormalHistogram.cs, 80 lines
+              Spherical histogram of mesh normals (bins from SphericalFibonacciPointSet, already
+              ported). Used by AutoHoleFill. Has no deps of its own, so it can be ported any time.
+              used by: AutoHoleFill   needs: -
+
+[maybe]       PlanarHoleFiller                                   mesh_ops/PlanarHoleFiller.cs, 410 lines
+              Fills planar holes (e.g. after MeshPlaneCut) by building a 2D polygon-with-holes and
+              inserting it into a planar mesh, then stitching. Handles nested loops.
+              used by: AutoHoleFill   needs: AxisAlignedBox2d, GeneralPolygon2d, MeshGenerator,
+              MeshInsertUVPolyCurve, MeshPlaneCut, MeshTransforms, PlanarComplex, PlaneGenerators,
+              Polygon2d
+
+[skip]        PlanarSpansFiller                                 mesh_ops/PlanarSpansFiller.cs, 210 lines
+              Variant of PlanarHoleFiller that fills from open EdgeSpans on a plane. Incomplete in C#.
+              used by: AutoHoleFill   needs: AxisAlignedBox2d, MeshGenerator, MeshInsertUVPolyCurve,
+              MeshTransforms, PlanarComplex, PlaneGenerators, Polygon2d
+
+[skip]  LEAF  AutoHoleFill                                           mesh_ops/AutoHoleFill.cs, 364 lines
+              WIP 'pick a strategy' hole filler: planar, minimal or smoothed fill based on hole shape.
+              The C# comments say it is not really functional.
+              used by: -   needs: AxisAlignedBox2d, NormalHistogram, PlanarHoleFiller,
+              PlanarSpansFiller, Polygon2d, PolyLine2d, SmoothedHoleFill
+
+
+########################################################################################################
+## 10. MORE SPATIAL / IMPLICIT / REMAINING 3D QUERIES
+## Extra spatial structures and implicit-surface tools, plus 3D distance and intersection routines for
+## rays and boxes that nothing ported needs yet.
+########################################################################################################
+[maybe] LEAF  PointAABBTree3                                        spatial/PointAABBTree3.cs, 861 lines
+              AABB tree over a point set with nearest-point queries and fast winding number for oriented
+              point clouds (needs normals and areas). Point-cloud counterpart of DMeshAABBTree3.
+              used by: -   needs: -
+
+[maybe] LEAF  CachingDenseGridTrilinearImplicit             implicit/CachingGridImplicit3d.cs, 208 lines
+              Trilinear grid implicit that evaluates and caches cell values lazily from a source
+              function.
+              used by: -   needs: -
+
+[maybe] LEAF  ImplicitFieldSampler3d                        implicit/ImplicitFieldSampler3d.cs, 91 lines
+              Samples (min/max/sum-combines) several implicit fields into one dense grid, for implicit
+              modelling.
+              used by: -   needs: -
+
+[maybe] LEAF  MarchingCubesPro                           mesh_generators/MarchingCubesPro.cs, 1058 lines
+              Faster MarchingCubes variant: continuation from seed points and a pre-sampled grid, which
+              avoids evaluating empty space. Useful if MakeSolid gets slow on large grids.
+              used by: -   needs: -
+
+[maybe]       IFalloffFunction, LinearFalloff, WyvillFalloff      implicit/FalloffFunctions.cs, 81 lines
+              Radial falloff curves (linear, Wyvill) for brush and blend weights. (The MathUtil 'user'
+              is only a same-named function, MathUtil.WyvillFalloff, so this is effectively a LEAF.)
+              used by: MathUtil*   needs: -
+
+[skip]        ImplicitField2d, ImplicitOperator2d, ImplicitPoint2d     implicit/Implicit2d.cs, 118 lines
+              2D implicit field interfaces and a point blob.
+              used by: ImplicitOperators, MarchingQuads   needs: AxisAlignedBox2f
+
+[skip]  LEAF  ImplicitNAryOp2d, ImplicitBlend2d, ImplicitUnion2d, ImplicitIntersection2d, ImplicitDifference2d
+              implicit/ImplicitOperators.cs, 184 lines
+              2D implicit CSG and blend operators.
+              used by: -   needs: AxisAlignedBox2f, Implicit2d
+
+[skip]  LEAF  MarchingQuads                                         implicit/MarchingQuads.cs, 421 lines
+              2D marching squares iso-line extraction from an ImplicitField2d. The C# calls it 'very old
+              code'.
+              used by: -   needs: AxisAlignedBox2f, DPolyLine2f, Implicit2d
+
+[skip]        DPolyLine2f                                                 curve/PolyLine2f.cs, 204 lines
+              Old dynamic float 2D polyline, used only by MarchingQuads.
+              used by: MarchingQuads   needs: -
+
+[skip]  LEAF  Bitmap2                                                      spatial/Bitmap2.cs, 108 lines
+              2D bit grid (BitArray-backed), the 2D version of Bitmap3.
+              used by: -   needs: -
+
+[skip]  LEAF  BiGrid3                                                       spatial/BiGrid3.cs, 59 lines
+              Two-level multiresolution sparse grid. Unfinished in C#.
+              used by: -   needs: -
+
+[skip]  LEAF  HBitArray                                                     core/HBitArray.cs, 206 lines
+              Hierarchical bit array that skips empty 32-bit blocks during iteration.
+              used by: -   needs: -
+
+[maybe]       DistRay3Segment3                                   distance/DistRay3Segment3.cs, 324 lines
+              Distance between a 3D ray and segment. Used by CurveUtils and DCurve3BoxTree (curve
+              picking).
+              used by: CurveUtils, DCurve3BoxTree   needs: -
+
+[skip]  LEAF  DistLine3Ray3                                         distance/DistLine3Ray3.cs, 115 lines
+              Distance between a 3D line and ray.
+              used by: -   needs: -
+
+[skip]  LEAF  DistRay3Ray3                                           distance/DistRay3Ray3.cs, 165 lines
+              Distance between two 3D rays.
+              used by: -   needs: -
+
+[maybe]       IntrLine3Box3                                     intersection/IntrLine3Box3.cs, 199 lines
+              Line vs oriented Box3d intersection.
+              used by: IntrRay3Box3   needs: -
+
+[maybe]       IntrRay3Box3                                       intersection/IntrRay3Box3.cs, 150 lines
+              Ray vs oriented Box3d intersection. Used by DCurve3BoxTree.
+              used by: DCurve3BoxTree   needs: IntrLine3Box3
+
+[maybe] LEAF  IntrSegment3Box3                               intersection/IntrSegment3Box3.cs, 232 lines
+              Segment vs oriented Box3d intersection.
+              used by: -   needs: -
+
+
+########################################################################################################
+## 11. ALTERNATIVE MESH STRUCTURES, UNDO
+## Non-DMesh3 containers and the undo/redo change records.
+########################################################################################################
+[maybe] LEAF  ModifyVerticesMeshChange, SetVerticesMeshChange, RemoveTrianglesMeshChange, AddTrianglesMeshChange
+              mesh/DMesh3Changes.cs, 495 lines
+              Reversible change records (Apply/Revert) for vertex moves and triangle add/remove,
+              restoring the same vertex and triangle ids. Building blocks for undo in an editor.
+              used by: -   needs: -
+
+[skip]        SimpleMesh, SimpleMeshBuilder                                mesh/SimpleMesh.cs, 610 lines
+              Static packed-array triangle mesh (no topology) and its builder. Fast to construct, used
+              for IO in C#. DMesh3 or MeshArrays already serve that role here.
+              used by: MeshGenerator   needs: MaterialTypes, VectorArray
+
+[skip]        NTMesh3                                                        mesh/NTMesh3.cs, 1648 lines
+              Non-manifold triangle mesh (an edge may have many triangles); supports only split and
+              poke. Specialist.
+              used by: MeshGenerator   needs: -
+
+[skip]  LEAF  SimpleQuadMesh                                           mesh/SimpleQuadMesh.cs, 412 lines
+              Packed quad mesh with OBJ export only.
+              used by: -   needs: MeshIO
+
+[maybe]       IndexedUVMesh                                                  mesh/MeshUVSet.cs, 81 lines
+              Separate UV-index triangle layer for a mesh (UV seams). Used by OBJ IO. Might matter for
+              EditableMesh UV export with seams.
+              used by: MeshIO, OBJWriter   needs: -
+
+
+########################################################################################################
+## 12. COLOR
+## Color types and maps. DMesh3 vertex colors are already plain Vector3d, so these are optional
+## conveniences (e.g. for coloring by curvature or distance).
+########################################################################################################
+[maybe]       Colorf                                                          color/Colorf.cs, 272 lines
+              RGBA float color with blending, presets and conversions. Used by VoxelSurfaceGenerator,
+              PlanarComplex and DGraph colors.
+              used by: Colorb, ColorHSV, ColorMap, ColorMixer, MeshEditor*, PlanarComplex,
+              VoxelSurfaceGenerator   needs: Colorb
+
+[skip]        Colorb                                                          color/Colorb.cs, 136 lines
+              RGBA byte color.
+              used by: Colorf   needs: Colorf
+
+[skip]        ColorHSV                                                      color/ColorHSV.cs, 150 lines
+              HSV color with conversion to and from RGB.
+              used by: ColorMixer   needs: Colorf
+
+[maybe] LEAF  ColorMap                                                       color/ColorMap.cs, 75 lines
+              Piecewise-linear value -> color ramp (e.g. heat maps).
+              used by: -   needs: Colorf
+
+[skip]  LEAF  ColorMixer                                                   color/ColorMixer.cs, 36 lines
+              Lighten, darken and mix helpers in HSV space.
+              used by: -   needs: Colorf, ColorHSV
+
+[skip]  LEAF  ScalarMap                                                      math/ScalarMap.cs, 74 lines
+              Piecewise-linear value -> value ramp (scalar version of ColorMap).
+              used by: -   needs: -
+
+
+########################################################################################################
+## 13. FILE I/O
+## Mesh file formats. Roblox has no file system, but text formats could be parsed from strings
+## (HttpService, pasted data, Studio plugins). OBJ and STL are the realistic candidates. Binary formats
+## need buffer-based ports. The USD/glTF code is very large and probably not worth it.
+########################################################################################################
+[maybe]       IOCode, EBuildMeshGroupMode, BuildMeshGroupConfig, ReadOptions, IOReadResult, IMeshReader, IOWriteResult, WriteOptions, WriteMesh, IMeshWriter
+              io/MeshIO.cs, 199 lines
+              Shared IO plumbing: result codes, read/write options, reader/writer interfaces and the
+              WriteMesh bundle. Needed by any format port.
+              used by: BinaryG3ReaderWriter, GLBReader, GLBWriter, GLTFReader, GLTFWriter, MeshIOUtil,
+              OBJReader, OBJWriter, OFFReader, OFFWriter, SimpleQuadMesh, StandardMeshReader,
+              StandardMeshWriter, STLReader, STLWriter, SVGWriter, USDAReader, USDCReader, USDFile,
+              USDMeshReader, Util*   needs: CommandArgumentSet, IndexedUVMesh, MaterialTypes
+
+[maybe]       GenericMaterial, OBJMaterial                                 io/MaterialTypes.cs, 82 lines
+              Material descriptions (generic and OBJ .mtl fields).
+              used by: DMesh3Builder*, IMesh*, MeshIO, MeshIOUtil, OBJReader, OBJWriter, SimpleMesh
+              needs: -
+
+[skip]        MeshIOUtil                                                      io/MeshIOUtil.cs, 23 lines
+              Small material/path helper for the OBJ writer.
+              used by: OBJWriter   needs: MaterialTypes, MeshIO
+
+[maybe]       OBJReader, Triangle                                             io/OBJReader.cs, 750 lines
+              Wavefront OBJ parser (positions, normals, uvs, groups, materials; n-gon triangulation).
+              Triangle is an internal face record.
+              used by: StandardMeshReader   needs: MaterialTypes, MeshIO, StandardMeshReader
+
+[maybe]       OBJWriter                                                       io/OBJWriter.cs, 312 lines
+              OBJ writer with optional normals, colors, uvs and groups/materials.
+              used by: StandardMeshWriter   needs: IndexedUVMesh, MaterialTypes, MeshIO, MeshIOUtil
+
+[maybe]       STLReader                                                       io/STLReader.cs, 477 lines
+              ASCII and binary STL reader with optional vertex welding.
+              used by: StandardMeshReader   needs: CommandArgumentSet, DVectorArray, MeshIO,
+              PointHashGrid3d, StandardMeshReader
+
+[maybe]       STLWriter                                                       io/STLWriter.cs, 126 lines
+              ASCII and binary STL writer.
+              used by: StandardMeshWriter   needs: MeshIO
+
+[skip]        OFFReader                                                       io/OFFReader.cs, 144 lines
+              OFF format reader.
+              used by: StandardMeshReader   needs: MeshIO, StandardMeshReader
+
+[skip]        OFFWriter                                                        io/OFFWriter.cs, 83 lines
+              OFF format writer.
+              used by: StandardMeshWriter   needs: MeshIO
+
+[skip]        ParsingMessagesHandler, MeshFormatReader, StandardMeshReader, OBJFormatReader, STLFormatReader, OFFFormatReader, GLTFFormatReader, GLBFormatReader, USDFormatReader, BinaryG3FormatReader
+              io/StandardMeshReader.cs, 488 lines
+              Reader registry that dispatches on file extension to the format readers, using file paths
+              and streams.
+              used by: GLBReader, GLTFReader, OBJReader, OFFReader, STLReader, USDAReader, USDCReader,
+              USDFile, USDMeshReader   needs: BinaryG3ReaderWriter, GLBReader, GLTFReader, MeshIO,
+              OBJReader, OFFReader, STLReader, USDMeshReader
+
+[skip]        StandardMeshWriter                                     io/StandardMeshWriter.cs, 263 lines
+              Writer registry that dispatches on file extension.
+              used by: Util*   needs: BinaryG3ReaderWriter, GLBWriter, GLTFWriter, MeshIO, OBJWriter,
+              OFFWriter, STLWriter
+
+[skip]        GLTFFile, GLTFBuffer, GLTFBufferSet                              io/GLTFFile.cs, 590 lines
+              glTF 2.0 JSON schema classes (System.Text.Json) and buffer loading.
+              used by: GLBReader, GLBWriter, GLTFReader, GLTFWriter   needs: Matrix4d, ResultOrFail
+
+[skip]        GLTFProcessingOptions, GLTFReader                              io/GLTFReader.cs, 468 lines
+              glTF scene -> meshes reader (node transforms, welding, primitive modes).
+              used by: GLBReader, StandardMeshReader   needs: GLTFFile, Matrix4d, MeshIO,
+              MeshTransforms, StandardMeshReader
+
+[skip]        GLTFWriter                                                     io/GLTFWriter.cs, 213 lines
+              Mesh -> glTF writer.
+              used by: GLBWriter, StandardMeshWriter   needs: GLTFFile, MeshIO
+
+[skip]        GLBReader                                                        io/GLBReader.cs, 68 lines
+              Binary glTF (.glb) container reader.
+              used by: StandardMeshReader   needs: GLTFFile, GLTFReader, MeshIO, StandardMeshReader
+
+[skip]        GLBWriter                                                        io/GLBWriter.cs, 80 lines
+              Binary glTF (.glb) writer.
+              used by: StandardMeshWriter   needs: GLTFFile, GLTFWriter, MeshIO
+
+[skip]        USDFile                                                          io/USDFile.cs, 1073 lines
+              In-memory USD scene model (prims, attributes, value types) shared by the USDA/USDC
+              readers. About 1000 lines.
+              used by: USDAReader, USDCReader, USDMeshReader   needs: Matrix2d, Matrix4d, MeshIO,
+              StandardMeshReader, USDAReader, USDCReader, Vector4d
+
+[skip]        USDAReader                                                    io/USDAReader.cs, 1212 lines
+              Text USD (.usda) parser (split across USDAReader.cs and USDAReader_parseutil.cs).
+              used by: USDFile, USDMeshReader   needs: Matrix2d, Matrix4d, MeshIO, StandardMeshReader,
+              USDFile
+
+[skip]        USDCReader                                                    io/USDCReader.cs, 1631 lines
+              Binary crate USD (.usdc) parser (split across USDCReader.cs and USDCReader_parseutil.cs).
+              Needs LZ4.
+              used by: USDFile, USDMeshReader   needs: LZ4Compression, Matrix2d, Matrix4d, MeshIO,
+              StandardMeshReader, USDFile
+
+[skip]        USDMeshReader                                               io/USDMeshReader.cs, 281 lines
+              Extracts meshes (with transforms, uvs, normals) from a parsed USD scene.
+              used by: StandardMeshReader   needs: Matrix4d, MeshIO, StandardMeshReader, USDAReader,
+              USDCReader, USDFile
+
+[skip]        LZ4Compression                                             io/LZ4Compression.cs, 188 lines
+              LZ4 block decompressor used by the USDC reader.
+              used by: USDCReader   needs: -
+
+[skip]        BinaryG3Writer, BinaryG3Reader                        io/BinaryG3ReaderWriter.cs, 60 lines
+              geometry3Sharp's own binary .g3mesh format.
+              used by: StandardMeshReader, StandardMeshWriter   needs: gSerialization, MeshIO
+
+[skip]        gSerialization, SimpleStore                                io/gSerialization.cs, 699 lines
+              BinaryWriter/Reader serialization of g3 types (vectors, frames, polygons, curves, DMesh3),
+              and a test-case dump/load helper. A buffer-based version could support saving meshes to
+              DataStores.
+              used by: BinaryG3ReaderWriter, PolygonFont2d, TransformSequence*   needs: Arc2d,
+              AxisAlignedBox2d, Circle2d, GeneralPolygon2d, ICurve, ParametricCurveSequence2,
+              PlanarSolid2d, Polygon2d, PolyLine2d
+
+[skip]  LEAF  SVGWriter                                                       io/SVGWriter.cs, 504 lines
+              Writes 2D polygons, curves and graphs to SVG for debugging.
+              used by: -   needs: Arc2d, AxisAlignedBox2d, Circle2d, CurveUtils2, DGraph2,
+              GeneralPolygon2d, ICurve, MeshIO, PlanarComplex, Polygon2d, PolyLine2d
+
+[skip]        CommandArgumentSet                                   core/CommandArgumentSet.cs, 137 lines
+              Typed key/value argument bag used for reader options.
+              used by: MeshIO, STLReader   needs: -
+
+[skip]  LEAF  PixelImage                                                  image/PixelImage.cs, 152 lines
+              Minimal RGBA image buffer type (format and compression enums).
+              used by: -   needs: -
+
+
+########################################################################################################
+## 14. .NET / C# INFRASTRUCTURE (probably skip)
+## Helpers that exist for C# language or runtime reasons (memory layout, threading, iterators,
+## profiling, files). Luau tables, closures and generalized iteration already cover them. Port
+## individual functions only if a later port needs them.
+########################################################################################################
+[skip]        DVectorArray3, DVectorArray3d, DVectorArray3f, DVectorArray3i, DIndexArray3i, DVectorArray2, DVectorArray2d, DVectorArray2f, DIndexArray2i
+              core/DVectorArray.cs, 267 lines
+              Growable DVector<T> viewed as an array of 2- or 3-vectors. Only STLReader uses one.
+              used by: STLReader   needs: -
+
+[skip]  LEAF  ConstantItr, RemapItr, MappedList, IntSequence              core/g3Iterators.cs, 155 lines
+              IEnumerable/IList adapters (constant, mapped, integer range). Luau closures replace them.
+              used by: -   needs: -
+
+[skip]  LEAF  HashBuilder                                                    core/HashUtil.cs, 116 lines
+              FNV-style hash combiner for vectors and frames.
+              used by: -   needs: -
+
+[skip]  LEAF  OptionalValue                                              core/OptionalValue.cs, 46 lines
+              Optional<T> struct. Luau has nil.
+              used by: -   needs: -
+
+[skip]        ResultOrFail                                                core/ResultOrFail.cs, 40 lines
+              Result-or-error-message struct used by GLTFFile.
+              used by: GLTFFile   needs: -
+
+[skip]  LEAF  IntTagSet, IntTagPair, StringTagSet                              core/TagSet.cs, 107 lines
+              Object -> int/string tag maps and a packed (type,value) int pair.
+              used by: -   needs: -
+
+[skip]  LEAF  BlockTimer, LocalProfiler                                   core/ProfileUtil.cs, 212 lines
+              Stopwatch-based timing helpers. Use os.clock().
+              used by: -   needs: -
+
+[skip]  LEAF  FileSystemUtils                                          core/FileSystemUtils.cs, 55 lines
+              File and path helpers. No file system on Roblox.
+              used by: -   needs: -
+
+[skip]  LEAF  Units                                                             core/Units.cs, 171 lines
+              Linear/angular unit enums and metric/imperial conversions.
+              used by: -   needs: -
+
+[maybe] LEAF  Snapping                                                        core/Snapping.cs, 60 lines
+              Snap a value to an increment or a nearby increment. Trivial, might be handy for editor
+              tools.
+              used by: -   needs: -
+
+[skip]  LEAF  Vector4f                                                       math/Vector4f.cs, 278 lines
+              Float 4-vector. Could alias Vector4d.
+              used by: -   needs: -
+
+
+########################################################################################################
+## LEFTOVERS INSIDE ALREADY-PORTED FILES
+## Types or members in already-ported files that were not ported.
+########################################################################################################
+  IndexRangeEnumerator  (core/Indexing.cs)
+              IEnumerable over an integer range (used by MeshIterativeSmooth). Use a numeric for loop or
+              Interval1i.
+  gException  (core/Util.cs)
+              Exception subclass. Luau uses error().
+  ParallelStream, LockingQueue  (core/gParallel.cs)
+              Producer/consumer threading helpers (STLWriter). No threads in Luau.
+  IDeformableMesh  (mesh/IMesh.cs)
+              IMesh plus SetVertex/SetVertexNormal. Used by MeshTransforms and MeshICP. Add it when
+              those are ported (DMesh3 already has the methods).
+  DIntAttribute  (mesh/GeoAttributeTypes.cs)
+              Dynamic int attribute helper class.
+  Vector2l  (math/Vector2i.cs)
+              64-bit integer 2D vector for Query2Int64. Luau numbers cannot represent int64 exactly.
+  Vector2dJsonConverter, Vector3dJsonConverter, QuaterniondJsonConverter  (math/Vector2d.cs /
+  Vector3d.cs / Quaterniond.cs)
+              System.Text.Json converters. Not applicable.
+  Vector2d.GetInformation (nested Information)  (math/Vector2d.cs)
+              2D point-set dimension analysis used by ConvexHull2. Port with ConvexHull2.
+  Segment2dBox  (math/Segment2.cs)
+              Reference-type wrapper for Segment2d (used by SVGWriter). Not needed in Luau.
+  MeshEditor.AppendPathSolid  (mesh/MeshEditor.cs)
+              Needs TubeGenerator and Polygon2d (groups 3 and 6).
+  Store / Restore  (math/TransformSequence.cs)
+              Binary serialization. Needs gSerialization.
+  2D / Box3d / Polygon2d overloads  (math/Frame3d.cs, math/BoundsUtil.cs, curve/DCurve3.cs)
+              Omitted overloads that use not-yet-ported types. Add them when AxisAlignedBox2d and
+              Polygon2d land.
+
+########################################################################################################
+## ALREADY PORTED (for reference): geometry3Sharp files with a src/ module
+########################################################################################################
+  comp_geom/: SphericalFibonacciPointSet
+  core/: DVector, DynamicPriorityQueue, IndexPriorityQueue, Indexing, ProgressCancel, RefCountVector,
+  SmallListSet, Util, gParallel
+  curve/: DCurve3
+  distance/: DistLine3Segment3, DistLine3Triangle3, DistPoint3Circle3, DistPoint3Cylinder3,
+  DistPoint3Triangle3, DistSegment3Triangle3, DistTriangle3Triangle3, Distance
+  implicit/: CachingMeshSDF, GridImplicits3d, Implicit3d
+  intersection/: IntersectionLowLevel, Intersector1, IntrLine2Triangle2, IntrLine3AxisAlignedBox3,
+  IntrRay3AxisAlignedBox3, IntrRay3Triangle3, IntrSegment2Triangle2, IntrTriangle2Triangle2,
+  IntrTriangle3Triangle3
+  math/: AxisAlignedBox2i, AxisAlignedBox3d, AxisAlignedBox3i, BoundsUtil, Box3, FastWindingMath,
+  Frame3d, IndexTypes, IndexUtil, Interval1d, Interval1i, Line2, Line3, MathUtil, Matrix3d, Plane3,
+  Quaterniond, QueryTuple2d, Ray3, Segment2, Segment3, TransformSequence, Triangle2, Triangle3,
+  Vector2d, Vector2i, Vector3d, Vector3i
+  mesh/: DMesh3, DMesh3Attributes, DMesh3Builder, DMesh3_debug, DMesh3_edge_operators, DSubmesh3,
+  EdgeLoop, EdgeSpan, FaceGroupUtil, GeoAttributeTypes, IMesh, MeshCaches, MeshConstraintUtil,
+  MeshConstraints, MeshEditor, MeshIterators, MeshMeasurements, MeshNormals, MeshPointSets,
+  MeshRefinerBase, MeshUtil, MeshWeights, Reducer, RegionRemesher, Remesher, RemesherPro
+  mesh_generators/: MarchingCubes
+  mesh_ops/: MergeCoincidentEdges, MeshAutoRepair, MeshRepairOrientation, MinimalHoleFill,
+  RegionOperator, RemoveDuplicateTriangles, RemoveOccludedTriangles, SimpleHoleFiller
+  mesh_selection/: MeshBoundaryLoops, MeshConnectedComponents, MeshEdgeSelection, MeshFaceSelection,
+  MeshVertexSelection
+  queries/: IntersectionUtil, MeshQueries, MeshValidation, RayIntersection
+  shapes3/: Circle3, Cylinder3
+  spatial/: BasicIntersectionTargets, BasicProjectionTargets, Bitmap3, DCurveProjection, DMeshAABBTree,
+  DSparseGrid3, DenseGrid2, DenseGrid3, GridIndexing, MeshScalarSamplingGrid, MeshSignedDistanceGrid,
+  MeshWindingNumberGrid, PointSetHashtable, SpatialFunctions, SpatialInterfaces

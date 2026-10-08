@@ -16,7 +16,7 @@
 --   * Properties as methods: size()
 
 local Vector3i = require(script.Parent.Vector3i)
-local DenseGrid3f = require(script.Parent.DenseGrid3f)
+local DenseGrid3d = require(script.Parent.DenseGrid3d)
 
 local DenseGrid3i = {}
 DenseGrid3i.__index = DenseGrid3i
@@ -130,11 +130,11 @@ function DenseGrid3i:get_bitmap(thresh: number?)
 end
 
 function DenseGrid3i:Indices()
-	return DenseGrid3f._gridIndices(0, 0, 0, self.ni, self.nj, self.nk)
+	return DenseGrid3d._gridIndices(0, 0, 0, self.ni, self.nj, self.nk)
 end
 
 function DenseGrid3i:InsetIndices(border_width: number)
-	return DenseGrid3f._gridIndices(
+	return DenseGrid3d._gridIndices(
 		border_width,
 		border_width,
 		border_width,

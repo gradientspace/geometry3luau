@@ -102,12 +102,13 @@ grids can run without hitting the script timeout. All "parallel" C# code runs se
 ## What is ported
 
 Core: `DMesh3` (+ attributes, edge operators, validity checks), `DMesh3Builder`, `DVector`, `RefCountVector`,
-`SmallListSet`, vector/matrix/quaternion/frame/box/interval types, `MathUtil`, `IndexUtil`.
+`SmallListSet`, `VectorArray`, vector/matrix/quaternion/frame/box/interval types (including `Vector4d`,
+`Matrix2d`, `Matrix4d`, `AxisAlignedBox2d`, `Box2d`), `MathUtil`, `IndexUtil`, `MeshIndexUtil`, `MeshTransforms`.
 Spatial and queries: `DMeshAABBTree3` (nearest point, ray casts, intersections, winding number, fast winding
 number), `FastWindingMath`, distance and intersection classes, `MeshQueries`, `MeshMeasurements`.
 Refinement: `MeshRefinerBase`, `Reducer`, `Remesher`, `RemesherPro`, `RegionRemesher`, `MeshConstraints`,
 `MeshConstraintUtil`, projection targets.
-Grids and implicits: `DenseGrid3f/i`, `Bitmap3`, `MeshWindingNumberGrid`, `MeshSignedDistanceGrid`,
+Grids and implicits: `DenseGrid3d/i`, `Bitmap3`, `MeshWindingNumberGrid`, `MeshSignedDistanceGrid`,
 `CachingMeshSDF`, `MeshScalarSamplingGrid`, `Implicit3d`, `DenseGridTrilinearImplicit`, `MarchingCubes`.
 Repair and editing: `MeshAutoRepair`, `MergeCoincidentEdges`, `RemoveDuplicateTriangles`, `MeshRepairOrientation`,
 `MinimalHoleFill`, `SimpleHoleFiller`, `RemoveOccludedTriangles`, `MeshEditor`, `MeshBoundaryLoops`, selections,

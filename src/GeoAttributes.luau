@@ -9,7 +9,7 @@
 --
 -- Classes:
 --   BaseGeoAttribute            (IGeoAttribute<T>)
---   IntGeoAttribute, Vector2fGeoAttribute, Vector3fGeoAttribute
+--   IntGeoAttribute, Vector2dGeoAttribute, Vector3dGeoAttribute
 --   BaseBaryVertGeoAttribute -> VertexColorsGeoAttribute    (ILinearGeoAttribute, per-vertex)
 --   BaseBaryTriGeoAttribute  -> TriUVsGeoAttribute, TriNormalsGeoAttribute (ILinearGeoAttribute, per-triangle)
 -- Tuples:
@@ -214,8 +214,8 @@ local function subclass(base, defaultValue)
 end
 
 GeoAttributes.IntGeoAttribute = subclass(BaseGeoAttribute, 0)
-GeoAttributes.Vector2fGeoAttribute = subclass(BaseGeoAttribute, Vector2d.Zero)
-GeoAttributes.Vector3fGeoAttribute = subclass(BaseGeoAttribute, Vector3d.Zero)
+GeoAttributes.Vector2dGeoAttribute = subclass(BaseGeoAttribute, Vector2d.Zero)
+GeoAttributes.Vector3dGeoAttribute = subclass(BaseGeoAttribute, Vector3d.Zero)
 
 ---------------------------------------------------------------------------------------------------
 -- per-vertex attributes that have their value interpolated during mesh refinement edits

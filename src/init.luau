@@ -8,25 +8,12 @@
 --
 -- Every module in this package is available as a field with the same name (G3.DMesh3, G3.Remesher,
 -- G3.MarchingCubes, ...). Modules are loaded on first access, so requiring the package is cheap and has
--- no side effects. Float/double aliases of the C# API are provided (Vector3f = Vector3d, ...).
+-- no side effects. Only the double versions of C# float/double types are ported (G3.Vector3d; there is no
+-- G3.Vector3f), see PORTING.md.
 
 local G3 = {}
 
 G3.Version = "0.1.0"
-
--- C# float types map to the same Luau classes as their double counterparts (see PORTING.md)
-local ALIASES = {
-	Vector3f = "Vector3d",
-	Vector2f = "Vector2d",
-	AxisAlignedBox3f = "AxisAlignedBox3d",
-	Frame3f = "Frame3d",
-	Quaternionf = "Quaterniond",
-	Matrix3f = "Matrix3d",
-	Triangle3f = "Triangle3d",
-	Ray3f = "Ray3d",
-	Segment3f = "Segment3d",
-	Line3f = "Line3d",
-}
 
 -- names that are not modules but live inside another module
 local NESTED = {
@@ -37,6 +24,14 @@ local NESTED = {
 	MeshComponents = { "DMesh3", "MeshComponents" },
 	MeshHints = { "DMesh3", "MeshHints" },
 	FailMode = { "Util", "FailMode" },
+	SetGroupBehavior = { "MeshOps", "SetGroupBehavior" },
+	VectorArray3d = { "VectorArray", "VectorArray3d" },
+	VectorArray3i = { "VectorArray", "VectorArray3i" },
+	IndexArray3i = { "VectorArray", "IndexArray3i" },
+	VectorArray2d = { "VectorArray", "VectorArray2d" },
+	IndexArray2i = { "VectorArray", "IndexArray2i" },
+	VectorArray4 = { "VectorArray", "VectorArray4" },
+	IndexArray4i = { "VectorArray", "IndexArray4i" },
 }
 
 local function loadModule(name: string): any
@@ -61,7 +56,7 @@ setmetatable(G3, {
 			local m = loadModule(nested[1])
 			value = m and m[nested[2]]
 		else
-			value = loadModule(ALIASES[key] or key)
+			value = loadModule(key)
 		end
 		if value ~= nil then
 			rawset(t, key, value)

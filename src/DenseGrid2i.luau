@@ -12,7 +12,7 @@
 --               this[Vector2i] -> GetV(ij)/SetV(ij, v)
 --   * atomic_* functions are plain sequential updates; size() is a method
 
-local DenseGrid2f = require(script.Parent.DenseGrid2f)
+local DenseGrid2d = require(script.Parent.DenseGrid2d)
 
 local DenseGrid2i = {}
 DenseGrid2i.__index = DenseGrid2i
@@ -105,10 +105,10 @@ function DenseGrid2i:sum(): number
 end
 
 function DenseGrid2i:Indices()
-	return DenseGrid2f._indices2(0, 0, self.ni, self.nj)
+	return DenseGrid2d._indices2(0, 0, self.ni, self.nj)
 end
 function DenseGrid2i:InsetIndices(border_width: number)
-	return DenseGrid2f._indices2(border_width, border_width, self.ni - border_width, self.nj - border_width)
+	return DenseGrid2d._indices2(border_width, border_width, self.ni - border_width, self.nj - border_width)
 end
 
 return DenseGrid2i

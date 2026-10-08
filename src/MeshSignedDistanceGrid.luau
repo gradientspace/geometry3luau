@@ -37,7 +37,7 @@
 local Vector3d = require(script.Parent.Vector3d)
 local Vector3i = require(script.Parent.Vector3i)
 local MathUtil = require(script.Parent.MathUtil)
-local DenseGrid3f = require(script.Parent.DenseGrid3f)
+local DenseGrid3d = require(script.Parent.DenseGrid3d)
 local DenseGrid3i = require(script.Parent.DenseGrid3i)
 local IndexUtil = require(script.Parent.IndexUtil)
 
@@ -329,7 +329,7 @@ function MeshSignedDistanceGrid:Compute()
 	local nj = TruncInt((max.y - origin.y) / CellSize) + 1
 	local nk = TruncInt((max.z - origin.z) / CellSize) + 1
 
-	self.grid = DenseGrid3f.new()
+	self.grid = DenseGrid3d.new()
 	if self.ComputeMode == ComputeModes.NarrowBand_SpatialFloodFill then
 		if self.Spatial == nil or self.NarrowBandMaxDistance == 0 or self.UseParallel == false then
 			error("MeshSignedDistanceGrid.Compute: must set Spatial data structure and band max distance, and UseParallel=true")

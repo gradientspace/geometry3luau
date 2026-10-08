@@ -8,8 +8,10 @@
 --   BoundsPointSet(source)                   Bounds(IPointSet)             (VertexIndices(), GetVertex(vid))
 --   BoundsTriangle(tri)                      Bounds(ref Triangle3d)
 --   BoundsVectors(v0, v1, v2)                Bounds(ref Vector3d v0, v1, v2)
+--   BoundsVectors2(v0, v1, v2)               Bounds(ref Vector2d v0, v1, v2)          -> AxisAlignedBox2d
 --   BoundsTransformed(box, TransformF)       Bounds(ref AxisAlignedBox3d, Func<Vector3d,Vector3d>)  (returns a copy if TransformF is nil)
 --   BoundsPositions(positions)               Bounds(IEnumerable<Vector3d>)  (array or iterator)
+--   BoundsPositions2(positions)              Bounds(IEnumerable<Vector2d>) (array or iterator) -> AxisAlignedBox2d
 --   BoundsValues(values, PositionF)          Bounds<T>(IEnumerable<T>, Func<T,Vector3d>)
 --   BoundsTransformSequence(values, xform)   Bounds(IEnumerable<Vector3d>, TransformSequence) (xform:TransformP(v))
 --   BoundsInFrame(values, frame)
@@ -17,11 +19,14 @@
 --   Bounds(...) dispatches: Triangle3d -> BoundsTriangle, (v0, v1, v2) -> BoundsVectors,
 --     (box, TransformF) -> BoundsTransformed, (values, PositionF) -> BoundsValues,
 --     array/iterator of DMesh3 -> BoundsMeshes, point set -> BoundsPointSet, else BoundsPositions.
--- Not ported: the 2D overloads returning AxisAlignedBox2d/2f (AxisAlignedBox2d is not part of this port).
+--     2D: (v0, v1, v2) of Vector2d -> BoundsVectors2, array of Vector2d -> BoundsPositions2
+--     (an iterator of Vector2d cannot be detected: call BoundsPositions2 directly).
+-- The float overloads (Vector3f/Vector2f -> AxisAlignedBox3f/2f) are the same functions (no float types).
 
 local MathUtil = require(script.Parent.MathUtil)
 local Vector3d = require(script.Parent.Vector3d)
 local AxisAlignedBox3d = require(script.Parent.AxisAlignedBox3d)
+local AxisAlignedBox2d = require(script.Parent.AxisAlignedBox2d)
 local BitArray = require(script.Parent.BitArray)
 
 local BoundsUtil = {}
@@ -61,6 +66,12 @@ function BoundsUtil.BoundsVectors(v0, v1, v2)
 	return AxisAlignedBox3d.new(minx, miny, minz, maxx, maxy, maxz)
 end
 
+function BoundsUtil.BoundsVectors2(v0, v1, v2)
+	local minx, maxx = MathUtil.MinMax(v0.x, v1.x, v2.x)
+	local miny, maxy = MathUtil.MinMax(v0.y, v1.y, v2.y)
+	return AxisAlignedBox2d.new(minx, miny, maxx, maxy)
+end
+
 function BoundsUtil.BoundsTriangle(tri)
 	return BoundsUtil.BoundsVectors(tri.V0, tri.V1, tri.V2)
 end
@@ -81,6 +92,14 @@ function BoundsUtil.BoundsPositions(positions: any)
 	local box = AxisAlignedBox3d.Empty()
 	each(positions, function(v)
 		box:Contain(v)
+	end)
+	return box
+end
+
+function BoundsUtil.BoundsPositions2(positions: any)
+	local box = AxisAlignedBox2d.Empty()
+	each(positions, function(v)
+		box:ContainPoint(v)
 	end)
 	return box
 end
@@ -116,6 +135,9 @@ function BoundsUtil.Bounds(a: any, b: any?, c: any?)
 	if type(a) == "table" and a.V0 ~= nil and a.V1 ~= nil and a.V2 ~= nil and b == nil then
 		return BoundsUtil.BoundsTriangle(a)
 	elseif c ~= nil then
+		if a.z == nil then
+			return BoundsUtil.BoundsVectors2(a, b, c)
+		end
 		return BoundsUtil.BoundsVectors(a, b, c)
 	elseif type(a) == "table" and a.Min ~= nil and a.Max ~= nil then
 		return BoundsUtil.BoundsTransformed(a, b)
@@ -125,6 +147,8 @@ function BoundsUtil.Bounds(a: any, b: any?, c: any?)
 		return BoundsUtil.BoundsPointSet(a)
 	elseif type(a) == "table" and a[1] ~= nil and type(a[1]) == "table" and a[1].CachedBounds ~= nil then
 		return BoundsUtil.BoundsMeshes(a)
+	elseif type(a) == "table" and type(a[1]) == "table" and a[1].x ~= nil and a[1].z == nil then
+		return BoundsUtil.BoundsPositions2(a)
 	end
 	return BoundsUtil.BoundsPositions(a)
 end

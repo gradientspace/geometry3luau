@@ -1,5 +1,5 @@
 --!native
--- Port of geometry3Sharp math/Vector2d.cs (also used for Vector2f, see PORTING.md).
+-- Port of geometry3Sharp math/Vector2d.cs (Vector2d; Vector2f is not ported, see PORTING.md)
 -- (Vector2d.GetInformation, the 2D point-set analysis helper, is not ported.)
 -- Copyright (c) Ryan Schmidt (rms@gradientspace.com) - All Rights Reserved
 -- Distributed under the Boost Software License, Version 1.0. http://www.boost.org/LICENSE_1_0.txt
@@ -233,6 +233,16 @@ end
 
 function Vector2d.HashKey(self: Vector2d): string
 	return string.format("%.17g,%.17g", self.x, self.y)
+end
+
+-- support x,y and x y
+-- C# bool TryParse(string s, out Vector2d result) -> returns ok, result
+function Vector2d.TryParse(s: string): (boolean, Vector2d)
+	local ok, result4 = MathUtil.TryParseRealVector(s, 2)
+	if ok then
+		return true, new(result4.x, result4.y)
+	end
+	return false, Vector2d.Zero
 end
 
 return Vector2d

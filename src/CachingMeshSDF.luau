@@ -26,7 +26,7 @@
 local Vector3d = require(script.Parent.Vector3d)
 local Vector3i = require(script.Parent.Vector3i)
 local MathUtil = require(script.Parent.MathUtil)
-local DenseGrid3f = require(script.Parent.DenseGrid3f)
+local DenseGrid3d = require(script.Parent.DenseGrid3d)
 local DenseGrid3i = require(script.Parent.DenseGrid3i)
 local MeshSignedDistanceGrid = require(script.Parent.MeshSignedDistanceGrid)
 
@@ -90,7 +90,7 @@ function CachingMeshSDF:Initialize()
 	local nk = TruncInt((max.z - origin.z) / CellSize) + 1
 
 	self.UpperBoundDistance = (ni + nj + nk) * CellSize
-	self.grid = DenseGrid3f.new(ni, nj, nk, self.UpperBoundDistance)
+	self.grid = DenseGrid3d.new(ni, nj, nk, self.UpperBoundDistance)
 
 	self.MaxDistQueryDist = self.MaxOffsetDistance + (2 * CellSize * MathUtil.SqrtTwo)
 

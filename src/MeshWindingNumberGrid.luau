@@ -41,7 +41,7 @@
 local Vector3d = require(script.Parent.Vector3d)
 local Vector3i = require(script.Parent.Vector3i)
 local MathUtil = require(script.Parent.MathUtil)
-local DenseGrid3f = require(script.Parent.DenseGrid3f)
+local DenseGrid3d = require(script.Parent.DenseGrid3d)
 local Bitmap3 = require(script.Parent.Bitmap3)
 local IndexUtil = require(script.Parent.IndexUtil)
 
@@ -105,7 +105,7 @@ function MeshWindingNumberGrid:Compute()
 	local nj = TruncInt((max.y - origin.y) / CellSize) + 1
 	local nk = TruncInt((max.z - origin.z) / CellSize) + 1
 
-	self.winding_grid = DenseGrid3f.new()
+	self.winding_grid = DenseGrid3d.new()
 	if self.ComputeMode == ComputeModes.FullGrid then
 		self:make_grid_dense(origin, CellSize, ni, nj, nk, self.winding_grid)
 	else
